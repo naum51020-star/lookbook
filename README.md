@@ -26,18 +26,16 @@
 ```
 
 ## 단체복 시뮬레이션 (룩북 카테고리 줄의 "단체복 NEW")
+같은 모델·같은 포즈로 찍은 룩 사진을 허리선에서 나눠, 고른 상의 룩의 윗부분 + 하의 룩의 아랫부분을 이어 붙여 보여줍니다.
+
 | 파일 | 하는 일 |
 |---|---|
-| `victor-teamwear.js` | 시뮬레이션 화면 (칩을 누를 때만 불러옴 → 평소 룩북 속도에 영향 없음) |
-| `victor-teamwear-data.js` | 모델 사진·단체복 목록(구글 드라이브 폴더 = 상품코드)·착장 레이어 |
-| `sim/models/` | 모델 사진 3장 (썸네일 + 배경을 오려낸 인물 이미지) |
+| `victor-teamwear.js` | 시뮬레이션 화면 (칩을 누를 때만 불러옴) |
+| `victor-teamwear-data.js` | 여자/남자 룩 목록, 허리선 위치, 상의·하의 아이콘·이름, 남녀 같은 상의 짝 |
+| `sim/looks/` | 배경을 지운 룩 사진(720x1720) + `icons/` 상의·하의 아이콘 |
 | `sim/spofl-wm.png` | 워터마크 로고 |
+| `tools/make_looks.py` | 새 룩 사진을 같은 크기로 자르고 허리선 찾기 |
 
-- 관리자 상단 **[단체복]** 버튼으로 섹션 보이기/숨기기 (내보내기 후 업로드)
-- 공유 링크: `victor-lookbook.html#teamwear` (미니샵은 `…&tab=lookbook#teamwear`)
-- 단체복 문의 버튼: 페이지에 `window.LOOKBOOK_TEAMWEAR_ASK_URL = '/문의주소'` 를 넣으면 보임
-- 실제 착장(옷 바뀜)은 `victor-teamwear-data.js` 의 `layers` 에 착장 이미지를 연결하면 바로 반영됨. 없으면 선택한 옷 이름표만 표시
-
-## 착장 이미지 붙이기 (무료 도구)
-1. `victor-tryon-kit.zip`의 `작업목록.html`을 따라 무료 착장 도구로 결과 이미지를 만든다 (파일 이름 = 결과 파일 이름)
-2. `tools/make_layers.py`로 결과에서 옷 부분만 잘라 `sim/layers/`에 넣고 `victor-teamwear-data.js`의 `layers`에 등록
+- 관리자 상단 **[단체복]** 버튼으로 섹션 보이기/숨기기
+- 공유 링크: `victor-lookbook.html#teamwear`
+- 단체복 문의 버튼: 페이지에 `window.LOOKBOOK_TEAMWEAR_ASK_URL = '/문의주소'`

@@ -6,13 +6,12 @@
 (function () {
   'use strict';
   if (window.VictorTeamwear) return;
-  const VERSION = '20261119-tw1';
+  const VERSION = '20261119-tw2';
   const SCRIPT = document.currentScript;
   const BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
   const W = 1080, H = 1350;                                   // 결과 이미지 4:5 (SNS·카톡 공유용)
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const asset = (p) => !p ? '' : /^(https?:|data:|blob:|\/\/)/.test(p) ? p : new URL(p, BASE).href;
-  const thumbUrl = (t) => !t ? '' : t.startsWith('drive:') ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(t.slice(6))}&sz=w400` : asset(t);
   const loadImg = (src) => new Promise((res, rej) => { const im = new Image(); im.decoding = 'async'; im.onload = () => res(im); im.onerror = rej; im.src = src; });
 
   const CSS = `
@@ -29,6 +28,13 @@
 .vtw-box h4{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:baseline;gap:8px}
 .vtw-box h4 b{font-size:11px;letter-spacing:.14em;color:#fff;background:#111;padding:3px 7px 2px;font-weight:700}
 .vtw-models{display:grid;grid-template-columns:1fr;gap:12px}
+.vtw-who{display:grid;gap:10px}
+.vtw-whob{display:flex;align-items:center;gap:14px;height:64px;padding:0 16px !important;border:1px solid #d9d9d9 !important;background:#fff;font-size:15px;font-weight:600;text-align:left}
+.vtw-whob.on{border-color:#000 !important;box-shadow:0 0 0 1px #000}
+.vtw-whob .ic{display:flex;gap:4px}
+.vtw-whob i{display:block;width:20px;height:32px;border-radius:10px 10px 4px 4px;background:#cfcfcf}
+.vtw-whob.on i{background:#111}
+.vtw-whob i.f{border-radius:10px 10px 8px 8px;width:18px}
 .vtw-model{position:relative;border:1px solid #d9d9d9;padding:5px;background:#fff;transition:border-color .15s}
 .vtw-model img{width:100%;aspect-ratio:3/4;object-fit:cover;background:var(--soft)}
 .vtw-model.on{border-color:#000;box-shadow:0 0 0 1px #000}
@@ -82,6 +88,8 @@
   .vtw-preview canvas{width:100%;height:44vh;object-fit:contain;background:#fff}
   .vtw-box{padding:16px}
   .vtw-models{grid-template-columns:repeat(3,1fr);gap:8px}
+  .vtw-who{grid-template-columns:repeat(3,1fr);gap:6px}
+  .vtw-whob{flex-direction:column;justify-content:center;gap:6px;height:84px;font-size:13px;padding:0 !important;text-align:center}
   .vtw-model .ck{right:8px;top:8px;width:22px;height:22px;font-size:11px}
   .vtw-items{grid-template-columns:repeat(3,1fr);gap:8px}
 }`;
@@ -95,33 +103,37 @@
     if (window.TEAMWEAR_DATA) return done(window.TEAMWEAR_DATA);
     const sc = document.createElement('script');
     const u = new URL(opts.dataSrc || 'victor-teamwear-data.js', BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
-    sc.onload = () => done(window.TEAMWEAR_DATA || { models: [], garments: [], layers: {} });
+    sc.onload = () => done(window.TEAMWEAR_DATA || { people: {} });
     sc.onerror = () => { root.innerHTML = '<div class="vtw-empty">단체복 데이터를 불러오지 못했어요 (victor-teamwear-data.js)</div>'; };
     document.head.appendChild(sc);
   }
 
   function build(root, D, shareUrl) {
-    const models = D.models || [], garments = D.garments || [], layers = D.layers || {};
-    if (!models.length) { root.innerHTML = '<div class="vtw-empty">준비중입니다</div>'; return; }
-    const G = (code) => garments.find(g => g.code === code);
-    const forGender = (gender, part) => garments.filter(g => (g.part || 'top') === part && (g.gender === gender || g.gender === 'U'));
-    const pairOf = (g) => {                                      // 남녀 세트: 코드 끝 F/M만 다른 상품 (공용 U는 자기 자신)
-      if (!g) return null;
-      if (g.gender === 'U') return { M: g.code, F: g.code };
-      const base = g.code.slice(0, -1), m = G(base + 'M'), f = G(base + 'F');
-      return m && f ? { M: m.code, F: f.code } : null;
+    const P = D.people || {}, CV = D.canvas || { w: 720, h: 1720, shoulderY: 300 };
+    if (!(P.F || []).length && !(P.M || []).length) { root.innerHTML = '<div class="vtw-empty">준비중입니다</div>'; return; }
+    const looks = (g) => P[g] || [];
+    const L = (g, id) => looks(g).find(l => l.id === id);
+    const tops = (g) => looks(g).filter(l => l.top);
+    const bottoms = (g) => looks(g).filter(l => l.bottom);
+    const first = (g, part) => (part === 'top' ? tops(g) : bottoms(g))[0]?.id || looks(g)[0]?.id;
+    const st = {
+      who: (P.F || []).length && (P.M || []).length ? 'FM' : (P.F || []).length ? 'F' : 'M',
+      tab: (P.F || []).length ? 'F' : 'M',
+      sel: { F: { top: first('F', 'top'), bottom: first('F', 'bottom') }, M: { top: first('M', 'top'), bottom: first('M', 'bottom') } },
+      club: '', sub: 'BADMINTON CLUB', logo: null,
     };
-    const st = { model: models[0].id, tab: 'M', sel: { M: { top: null, bottom: null }, F: { top: null, bottom: null } }, club: '', sub: 'BADMINTON CLUB', logo: null };
+    const whoOpts = [['FM', '남녀 함께'], ['F', '여자'], ['M', '남자']].filter(([k]) => [...k].every(g => looks(g).length));
 
     root.innerHTML = `
       <div class="vtw-intro"><h3>우리 클럽 단체복 미리 입어보기</h3>
-        <p>모델 사진을 고르고, 단체복을 고르고, 우리 클럽 로고와 이름을 넣으면 배드민턴장 현수막까지 합성된 이미지를 바로 만들어요.<br>다운로드하거나 카톡으로 공유해서 클럽원들과 함께 골라보세요.</p></div>
+        <p>상의·하의 아이콘을 누르면 바로 갈아입혀져요. 우리 클럽 로고와 이름을 넣으면 배드민턴장 현수막까지 합성된 이미지를 만들 수 있어요.<br>다운로드하거나 카톡으로 공유해서 클럽원들과 함께 골라보세요.</p></div>
       <div class="vtw-grid">
-        <section class="vtw-box"><h4><b>STEP 1</b>모델 사진 고르기</h4>
-          <div class="vtw-models">${models.map((m, i) => `<button type="button" class="vtw-model ${i === 0 ? 'on' : ''}" data-model="${esc(m.id)}" aria-label="모델 사진 ${i + 1}"><img src="${esc(asset(m.thumb))}" alt="" loading="${i === 0 ? 'eager' : 'lazy'}"><span class="ck">✓</span></button>`).join('')}</div>
+        <section class="vtw-box"><h4><b>STEP 1</b>누가 입을까요?</h4>
+          <div class="vtw-who">${whoOpts.map(([k, t]) => `<button type="button" class="vtw-whob ${k === st.who ? 'on' : ''}" data-who="${k}"><span class="ic">${[...k].map(g => `<i class="${g === 'F' ? 'f' : 'm'}"></i>`).join('')}</span>${t}</button>`).join('')}</div>
+          <p class="vtw-note" style="margin-top:14px">같은 모델이 각 단체복을 입고 찍은 실제 사진으로 상의·하의를 바꿔 보여드려요.</p>
         </section>
         <section class="vtw-box"><h4><b>STEP 2</b>단체복 고르기</h4>
-          <div class="vtw-tabs" role="tablist"><button type="button" class="on" data-tab="M">남자 <small></small></button><button type="button" data-tab="F">여자 <small></small></button></div>
+          <div class="vtw-tabs" role="tablist" data-r="tabs"></div>
           <div data-r="items"></div>
         </section>
         <div class="vtw-col3">
@@ -136,7 +148,7 @@
               <button type="button" class="line" data-r="share">공유하기</button>
               <button type="button" class="full" data-r="copy">링크 복사해서 카톡에 붙여넣기</button>
             </div>
-            <p class="vtw-note">※ 합성으로 만든 이미지라 실제 제품의 색상·핏·디테일과 다를 수 있어요. 참고용으로만 봐 주세요.</p>
+            <p class="vtw-note">※ 사진을 이어 붙여 만든 이미지라 실제 제품의 색상·핏·디테일과 다를 수 있어요. 참고용으로만 봐 주세요.</p>
             <p class="vtw-cta" data-r="cta" hidden>이 조합이 마음에 드시나요? <a href="#" data-r="ask">단체복 견적 문의하기</a></p>
           </section>
         </div>
@@ -148,113 +160,76 @@
     if (window.LOOKBOOK_TEAMWEAR_ASK_URL) { R.ask.href = window.LOOKBOOK_TEAMWEAR_ASK_URL; R.cta.hidden = false; }
 
     // 이미지 미리 받아두기 → 클릭할 때마다 바로 다시 그림
-    const cache = new Map();
+    const cache = new Map(), ready = new Map();
     const getImg = (src) => { if (!src) return Promise.resolve(null); if (!cache.has(src)) cache.set(src, loadImg(src).catch(() => null)); return cache.get(src); };
-    const ready = new Map();                                   // src → Image (로딩 끝난 것)
     const want = (src) => { if (!src || ready.has(src)) return ready.get(src); getImg(src).then(im => { ready.set(src, im); draw(); }); return null; };
-    models.forEach(m => getImg(asset(m.cutout)).then(im => { ready.set(asset(m.cutout), im); if (m.id === st.model) draw(); }));
+    ['F', 'M'].forEach(g => looks(g).forEach(l => getImg(asset(l.photo)).then(im => { ready.set(asset(l.photo), im); draw(); })));
     getImg(asset('sim/spofl-wm.png')).then(im => { ready.set('wm', im); draw(); });
+
+    /* 상의 룩 윗부분 + 하의 룩 아랫부분 이어 붙이기 (조합별로 한 번 만들고 재사용) */
+    const mix = new Map();
+    function compose(g) {
+      const s = st.sel[g], A = L(g, s.top), B = L(g, s.bottom === undefined ? s.top : s.bottom);
+      if (!A || !B) return null;
+      const key = `${g}|${A.id}|${B.id}`; if (mix.has(key)) return mix.get(key);
+      const ia = want(asset(A.photo)), ib = want(asset(B.photo)); if (!ia || !ib) return null;
+      const cw = CV.w, ch = CV.h, y0 = CV.shoulderY;
+      const c = document.createElement('canvas'); c.width = cw; c.height = ch; const x = c.getContext('2d');
+      x.drawImage(ib, 0, 0, cw, ch);
+      if (A.id !== B.id) {
+        // 하의 룩의 상의가 더 길면, 위 룩 상의를 그만큼 살짝 늘려서 덮음 (허리에 다른 옷이 비치지 않게)
+        const hemA = A.hem, hemB = B.hem, seam = Math.max(hemA, hemB) + 6, k = hemB > hemA ? (hemB - y0) / (hemA - y0) : 1;
+        const t = document.createElement('canvas'); t.width = cw; t.height = ch; const tx = t.getContext('2d');
+        tx.drawImage(ia, 0, 0, cw, y0, 0, 0, cw, y0);
+        tx.drawImage(ia, 0, y0, cw, ch - y0, 0, y0, cw, (ch - y0) * k);
+        const gr = tx.createLinearGradient(0, seam - 8, 0, seam + 8);
+        gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        tx.globalCompositeOperation = 'destination-in'; tx.fillStyle = gr; tx.fillRect(0, 0, cw, ch);
+        x.drawImage(t, 0, 0);
+      }
+      mix.set(key, c); return c;
+    }
 
     /* STEP 2 목록 */
     function itemsHTML() {
       const g = st.tab, sel = st.sel[g];
-      const card = (x, part) => {
-        const on = sel[part] === x.code, pair = pairOf(x);
-        const th = thumbUrl(x.thumb);
-        return `<div class="vtw-item ${on ? 'on' : ''}"><button type="button" style="display:block;width:100%" data-pick="${esc(x.code)}" data-part="${part}">
-          <div class="th">${th ? `<img src="${esc(th)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</div>
-          ${x.gender === 'U' ? '<span class="g">공용</span>' : ''}
-          <div class="nm">${esc(x.name || x.code)}</div><div class="cd">${esc(x.code)}</div></button>
-          ${pair ? `<button type="button" class="vtw-pair" data-pair="${esc(x.code)}" data-part="${part}" title="남자·여자 모두 같은 상품으로 입기">남녀 같이 입기</button>` : ''}</div>`;
+      const card = (l, part) => {
+        const it = l[part], on = sel[part] === l.id;
+        const pair = part === 'top' && it.pair && L(g === 'F' ? 'M' : 'F', it.pair);
+        return `<div class="vtw-item ${on ? 'on' : ''}"><button type="button" style="display:block;width:100%" data-pick="${esc(l.id)}" data-part="${part}">
+          <div class="th"><img src="${esc(asset(it.icon))}" alt="" loading="lazy" onerror="this.remove()"></div>
+          <div class="nm">${esc(it.name || l.id)}</div></button>
+          ${pair ? `<button type="button" class="vtw-pair" data-pair="${esc(l.id)}" title="남자·여자 모두 같은 상품으로 입기">남녀 같이 입기</button>` : ''}</div>`;
       };
-      const none = (part) => `<div class="vtw-item none ${!sel[part] ? 'on' : ''}"><button type="button" style="display:block;width:100%" data-pick="" data-part="${part}"><div class="th">사진 그대로</div><div class="nm">기본</div><div class="cd">&nbsp;</div></button></div>`;
-      const tops = forGender(g, 'top'), bottoms = forGender(g, 'bottom');
-      return `<p class="vtw-part">상의</p><div class="vtw-items">${none('top')}${tops.map(x => card(x, 'top')).join('')}</div>
-        <p class="vtw-part">하의 (바지·치마)</p>${bottoms.length ? `<div class="vtw-items">${none('bottom')}${bottoms.map(x => card(x, 'bottom')).join('')}</div>` : `<div class="vtw-empty">하의 단체복은 준비중이에요. 곧 바지·치마도 바꿔 입어볼 수 있어요.</div>`}`;
+      return `<p class="vtw-part">상의</p><div class="vtw-items">${tops(g).map(l => card(l, 'top')).join('')}</div>
+        <p class="vtw-part">하의 (바지·치마)</p><div class="vtw-items">${bottoms(g).map(l => card(l, 'bottom')).join('')}</div>`;
     }
     function renderItems() {
+      const tabsFor = st.who === 'FM' ? ['F', 'M'] : [st.who];
+      if (!tabsFor.includes(st.tab)) st.tab = tabsFor[0];
+      R.tabs.style.gridTemplateColumns = `repeat(${tabsFor.length},1fr)`;
+      R.tabs.innerHTML = tabsFor.map(g => `<button type="button" class="${g === st.tab ? 'on' : ''}" data-tab="${g}">${g === 'F' ? '여자' : '남자'}</button>`).join('');
       R.items.innerHTML = itemsHTML();
-      root.querySelectorAll('.vtw-tabs button').forEach(b => {
-        b.classList.toggle('on', b.dataset.tab === st.tab);
-        const s = st.sel[b.dataset.tab]; const n = [s.top, s.bottom].filter(Boolean).length;
-        b.querySelector('small').textContent = n ? `${n}개 선택` : '';
-      });
     }
 
     /* 캔버스 합성 */
     let raf = 0;
     function draw() { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); }
     function paint() {
-      const m = models.find(x => x.id === st.model) || models[0];
-      drawCourt();
-      drawBanner();
-      const cut = want(asset(m.cutout));
-      let box = null;
-      if (cut) {
-        const h = m.fullBody ? H * 0.70 : H * 0.74;
-        const w = cut.width * (h / cut.height);
-        const x = (W - w) / 2, y = m.fullBody ? H * 0.965 - h : H - h;
-        if (m.fullBody) {                                    // 발밑 그림자
-          ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.filter = 'blur(10px)';
-          ctx.beginPath(); ctx.ellipse(W / 2, H * 0.962, w * 0.42, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-        }
-        ctx.drawImage(cut, x, y, w, h);
-        box = { x, y, w, h };
-        // 착장 레이어 (준비된 것만): '모델/사람/상품코드'
-        let missing = [];
-        m.people.forEach(p => ['bottom', 'top'].forEach(part => {
-          const code = st.sel[p.gender][part]; if (!code) return;
-          const src = layers[`${m.id}/${p.id}/${code}`];
-          const im = src ? want(asset(src)) : null;
-          if (im) { ctx.drawImage(im, x, y, w, h); return; }
-          // AI 착장 이미지가 없으면: 고른 상의 누끼컷을 사진 속 상의 영역에 입히고 원래 주름 음영을 살림
-          if (part === 'top' && p.top) {
-            const ov = topOverlay(m, p, code);
-            if (ov) { const s = w / cut.width; ctx.drawImage(ov, x + p.top.box[0] * s, y + p.top.box[1] * s, p.top.box[2] * s, p.top.box[3] * s); return; }
-            if (ov === null) return;                         // 이미지 받는 중 → 받으면 다시 그림
-          }
-          missing.push([p, part, code]);
-        }));
-        missing.forEach(([p, part, code]) => tag(box, p, part, code));
-      } else {
-        ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.font = '600 30px Pretendard, sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('이미지를 불러오는 중…', W / 2, H * 0.62);
-      }
+      drawCourt(); drawBanner();
+      const order = st.who === 'FM' ? ['F', 'M'] : [st.who];
+      const ph = order.length > 1 ? H * 0.70 : H * 0.72;          // 사람 키 (화면 높이 대비)
+      const scale = ph / CV.h, pw = CV.w * scale, foot = H * 0.975;
+      const xs = order.length > 1 ? [W * 0.37, W * 0.63] : [W / 2];
+      order.forEach((g, i) => {
+        const c = compose(g); const cx = xs[i];
+        ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.filter = 'blur(10px)';
+        ctx.beginPath(); ctx.ellipse(cx, foot - H * 0.03, pw * 0.2, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        if (c) ctx.drawImage(c, cx - pw / 2, foot - ph, pw, ph);
+        else { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.font = '600 26px Pretendard, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('불러오는 중…', cx, H * 0.62); }
+      });
       watermark();
     }
-    // 상의 입히기: (모델·사람·상품)별로 한 번 만들어 두고 재사용 → 클릭할 때마다 바로 바뀜
-    const ovCache = new Map();
-    function topOverlay(m, p, code) {
-      const key = `${m.id}/${p.id}/${code}`;
-      if (ovCache.has(key)) return ovCache.get(key);
-      const g = G(code); if (!g || !g.thumb) return undefined;
-      const gi = want(asset(g.thumb)), mi = want(asset(p.top.img));
-      if (!gi || !mi) return null;
-      const [, , bw, bh] = p.top.box;
-      const c = document.createElement('canvas'); c.width = bw; c.height = bh;
-      const x = c.getContext('2d');
-      x.fillStyle = baseColor(gi); x.fillRect(0, 0, bw, bh);   // 옷 그림 밖으로 삐져나온 곳은 그 옷의 기본 색으로
-      x.drawImage(gi, -bw * 0.03, -bh * 0.02, bw * 1.06, bh * 1.04);   // 누끼컷을 상의 영역에 맞춤 (가장자리 살짝 여유)
-      x.globalCompositeOperation = 'multiply'; x.drawImage(mi, 0, 0, bw, bh);   // 원래 옷의 주름·그림자
-      x.globalCompositeOperation = 'destination-in'; x.drawImage(mi, 0, 0, bw, bh);   // 상의 모양대로 자르기 (팔·머리카락은 그대로)
-      ovCache.set(key, c);
-      return c;
-    }
-    // 옷의 대표 색 (가운데 몸판 부분의 평균) — 한 번 계산해서 저장
-    const colorCache = new Map();
-    function baseColor(img) {
-      if (colorCache.has(img)) return colorCache.get(img);
-      const c = document.createElement('canvas'); c.width = 24; c.height = 24;
-      const x = c.getContext('2d'); x.drawImage(img, img.width * 0.3, img.height * 0.35, img.width * 0.4, img.height * 0.5, 0, 0, 24, 24);
-      const d = x.getImageData(0, 0, 24, 24).data; let r = 0, g = 0, b = 0, n = 0;
-      for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
-      const col = n ? `rgb(${Math.round(r / n)},${Math.round(g / n)},${Math.round(b / n)})` : '#ddd';
-      colorCache.set(img, col); return col;
-    }
-    // 옷 이미지·상의 마스크 미리 받아두기
-    garments.forEach(g => g.thumb && getImg(asset(g.thumb)).then(im => ready.set(asset(g.thumb), im)));
-    models.forEach(m => m.people.forEach(p => p.top && getImg(asset(p.top.img)).then(im => ready.set(asset(p.top.img), im))));
-
     function drawCourt() {
       // 벽
       let g = ctx.createLinearGradient(0, 0, 0, H * 0.6);
@@ -318,15 +293,6 @@
       ctx.fillText(name, x0, by + bh / 2 + (sub ? fs * 0.18 : fs * 0.36));
       if (sub) { ctx.font = `600 22px Pretendard, sans-serif`; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(sub.split('').join(' '), x0, by + bh / 2 + fs * 0.18 + 36); }
     }
-    function tag(b, p, part, code) {                       // 착장 이미지가 아직 없을 때: 선택한 옷 이름표
-      const g = G(code); if (!g) return;
-      const x = b.x + b.w * p.x, y = b.y + b.h * (part === 'top' ? p.topY : p.bottomY);
-      const t = `${part === 'top' ? '상의' : '하의'} · ${g.name || g.code}`;
-      ctx.font = '700 24px Pretendard, sans-serif'; const tw = ctx.measureText(t).width + 40;
-      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 10;
-      ctx.fillStyle = 'rgba(17,17,17,.88)'; roundRect(x - tw / 2, y - 24, tw, 48, 24); ctx.fill(); ctx.restore();
-      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y + 1); ctx.textBaseline = 'alphabetic';
-    }
     function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
     function watermark() {
       const wm = ready.get('wm');
@@ -339,18 +305,19 @@
 
     /* 이벤트 */
     root.addEventListener('click', e => {
-      const md = e.target.closest('[data-model]');
-      if (md) { st.model = md.dataset.model; root.querySelectorAll('.vtw-model').forEach(x => x.classList.toggle('on', x === md)); draw(); return; }
+      const wb = e.target.closest('[data-who]');
+      if (wb) { st.who = wb.dataset.who; root.querySelectorAll('.vtw-whob').forEach(x => x.classList.toggle('on', x === wb)); renderItems(); draw(); return; }
       const tb = e.target.closest('.vtw-tabs [data-tab]');
       if (tb) { st.tab = tb.dataset.tab; renderItems(); return; }
       const pr = e.target.closest('[data-pair]');
       if (pr) {
-        const pair = pairOf(G(pr.dataset.pair)), part = pr.dataset.part;
-        if (pair) { st.sel.M[part] = pair.M; st.sel.F[part] = pair.F; renderItems(); draw(); toast('남녀 같은 상품으로 입혔어요'); }
-        return;
+        const g = st.tab, o = g === 'F' ? 'M' : 'F', l = L(g, pr.dataset.pair);
+        st.sel[g].top = l.id; st.sel[o].top = l.top.pair;
+        if (st.who !== 'FM' && whoOpts.some(([k]) => k === 'FM')) { st.who = 'FM'; root.querySelectorAll('.vtw-whob').forEach(x => x.classList.toggle('on', x.dataset.who === 'FM')); }
+        renderItems(); draw(); toast('남녀 같은 상의로 입혔어요'); return;
       }
       const pk = e.target.closest('[data-pick]');
-      if (pk) { st.sel[st.tab][pk.dataset.part] = pk.dataset.pick || null; renderItems(); draw(); return; }
+      if (pk) { st.sel[st.tab][pk.dataset.part] = pk.dataset.pick; renderItems(); draw(); return; }
     });
     R.club.addEventListener('input', () => { st.club = R.club.value; draw(); });
     R.sub.addEventListener('input', () => { st.sub = R.sub.value; draw(); });
