@@ -230,76 +230,83 @@
       });
       watermark();
     }
-    function drawCourt() {
-      // 벽
-      let g = ctx.createLinearGradient(0, 0, 0, H * 0.6);
-      g.addColorStop(0, '#dfe5ec'); g.addColorStop(1, '#eef2f5');
-      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.6);
-      ctx.strokeStyle = 'rgba(30,45,70,.05)'; ctx.lineWidth = 2;
-      for (let x = 60; x < W; x += 135) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H * 0.52); ctx.stroke(); }
-      // 천장 조명 줄
-      ctx.fillStyle = '#2a3140'; ctx.fillRect(0, 0, W, 26);
-      for (let x = 90; x < W; x += 225) { ctx.fillStyle = 'rgba(255,255,240,.9)'; ctx.fillRect(x, 8, 120, 9); }
-      // 벽 보호패드
-      ctx.fillStyle = '#1f3157'; ctx.fillRect(0, H * 0.505, W, H * 0.095);
-      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(0, H * 0.505, W, 4);
-      // 바닥 (코트)
-      g = ctx.createLinearGradient(0, H * 0.6, 0, H);
-      g.addColorStop(0, '#2f7a5c'); g.addColorStop(1, '#25674c');
-      ctx.fillStyle = g; ctx.fillRect(0, H * 0.6, W, H * 0.4);
-      // 원근 라인
-      const yb = H * 0.62, yf = H * 1.08, L = (t, y) => W * (0.5 - t * (0.32 + 0.33 * (y - yb) / (yf - yb)));
-      ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 5;
-      const hline = (y, k = 1) => { ctx.beginPath(); ctx.moveTo(L(k, y), y); ctx.lineTo(W - L(k, y), y); ctx.stroke(); };
-      hline(yb); hline(H * 0.70); hline(H * 0.86, 1);
-      [1, 0.86].forEach(k => { ctx.beginPath(); ctx.moveTo(L(k, yb), yb); ctx.lineTo(L(k, yf), yf); ctx.moveTo(W - L(k, yb), yb); ctx.lineTo(W - L(k, yf), yf); ctx.stroke(); });
-      ctx.beginPath(); ctx.moveTo(W / 2, H * 0.70); ctx.lineTo(W / 2, yf); ctx.stroke();
-      // 바닥 광택
-      g = ctx.createRadialGradient(W / 2, H * 0.78, 50, W / 2, H * 0.78, W * 0.7);
-      g.addColorStop(0, 'rgba(255,255,255,.10)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g; ctx.fillRect(0, H * 0.6, W, H * 0.4);
+    function drawCourt() {                                   // 흰색 스튜디오 배경 (벽 + 바닥이 부드럽게 이어짐)
+      let g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.62, '#fbfbfa'); g.addColorStop(0.80, '#f1f1ef'); g.addColorStop(1, '#ebebe8');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      g = ctx.createRadialGradient(W / 2, H * 0.45, W * 0.15, W / 2, H * 0.5, W * 0.85);   // 가장자리 살짝 어둡게 (조명 느낌)
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.06)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    // 실제 비닐 현수막처럼: 살짝 처진 물결 + 천 주름 음영 + 금속 고리 + 끈 + 벽 그림자
+    let bannerCache = null, bannerKey = '';
+    function bannerFace(bw, bh) {
+      const key = [st.club, st.sub, !!st.logo, bw, bh].join('|');
+      if (bannerCache && bannerKey === key) return bannerCache;
+      const c = document.createElement('canvas'); c.width = bw; c.height = bh; const x = c.getContext('2d');
+      let g = x.createLinearGradient(0, 0, 0, bh); g.addColorStop(0, '#1b1b1d'); g.addColorStop(1, '#0d0d0e');
+      x.fillStyle = g; x.fillRect(0, 0, bw, bh);
+      x.strokeStyle = 'rgba(255,255,255,.22)'; x.lineWidth = 3; x.strokeRect(22, 22, bw - 44, bh - 44);   // 인쇄 테두리
+      let tx = 56;
+      if (st.logo) {
+        const s = bh - 70, cx = 44 + s / 2, cy = bh / 2;
+        x.save(); x.beginPath(); x.arc(cx, cy, s / 2, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill(); x.clip();
+        const r = Math.min((s * 0.8) / st.logo.width, (s * 0.8) / st.logo.height);
+        x.drawImage(st.logo, cx - st.logo.width * r / 2, cy - st.logo.height * r / 2, st.logo.width * r, st.logo.height * r); x.restore();
+        tx = 44 + s + 30;
+      }
+      const name = st.club.trim() || '우리 클럽 이름', sub = st.sub.trim();
+      const font = (fs) => `900 ${fs}px Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
+      const maxW = bw - 56 - tx; let fs = 84; x.font = font(fs);
+      while (x.measureText(name).width > maxW && fs > 30) { fs -= 2; x.font = font(fs); }
+      const center = !st.logo, x0 = center ? bw / 2 : tx;
+      x.textAlign = center ? 'center' : 'left';
+      x.fillStyle = st.club.trim() ? '#fff' : 'rgba(255,255,255,.45)';
+      x.fillText(name, x0, bh / 2 + (sub ? fs * 0.16 : fs * 0.36));
+      if (sub) { x.font = '700 24px Pretendard, sans-serif'; x.fillStyle = '#f2d34b'; x.fillText(sub.split('').join(' '), x0, bh / 2 + fs * 0.16 + 40); }
+      // 비닐 광택 + 세로 주름 음영
+      g = x.createLinearGradient(0, 0, 0, bh); g.addColorStop(0, 'rgba(255,255,255,.10)'); g.addColorStop(.35, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.18)');
+      x.fillStyle = g; x.fillRect(0, 0, bw, bh);
+      [[0.18, .07], [0.33, -.06], [0.52, .05], [0.71, -.07], [0.86, .05]].forEach(([p, a]) => {
+        const cx = bw * p, gg = x.createLinearGradient(cx - 40, 0, cx + 40, 0);
+        gg.addColorStop(0, 'rgba(0,0,0,0)'); gg.addColorStop(.5, a > 0 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${-a * 2})`); gg.addColorStop(1, 'rgba(0,0,0,0)');
+        x.fillStyle = gg; x.fillRect(cx - 40, 0, 80, bh);
+      });
+      bannerCache = c; bannerKey = key; return c;
     }
     function drawBanner() {
-      const bx = W * 0.07, by = H * 0.075, bw = W * 0.86, bh = H * 0.155;
-      // 매다는 줄
-      ctx.strokeStyle = 'rgba(40,40,40,.55)'; ctx.lineWidth = 2;
-      [[bx + 14, by + 12], [bx + bw - 14, by + 12]].forEach(([x, y]) => { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (x < W / 2 ? -30 : 30), 26); ctx.stroke(); });
-      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
-      ctx.fillStyle = '#111'; ctx.fillRect(bx, by, bw, bh); ctx.restore();
-      // 천 느낌
-      const g = ctx.createLinearGradient(0, by, 0, by + bh);
-      g.addColorStop(0, 'rgba(255,255,255,.07)'); g.addColorStop(.5, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.12)');
-      ctx.fillStyle = g; ctx.fillRect(bx, by, bw, bh);
-      ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2; ctx.strokeRect(bx + 10, by + 10, bw - 20, bh - 20);
-      [[bx + 14, by + 12], [bx + bw - 14, by + 12], [bx + 14, by + bh - 12], [bx + bw - 14, by + bh - 12]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fillStyle = '#bbb'; ctx.fill(); });
-      // 로고
-      let tx = bx + 40;
-      if (st.logo) {
-        const s = bh - 40, cx = bx + 30 + s / 2, cy = by + bh / 2;
-        ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, s / 2, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.clip();
-        const r = Math.min((s * 0.8) / st.logo.width, (s * 0.8) / st.logo.height);
-        ctx.drawImage(st.logo, cx - st.logo.width * r / 2, cy - st.logo.height * r / 2, st.logo.width * r, st.logo.height * r);
-        ctx.restore(); tx = bx + 30 + s + 28;
+      const bw = Math.round(W * 0.84), bh = Math.round(H * 0.15), bx = (W - bw) / 2, by = H * 0.085, sag = 10;
+      const face = bannerFace(bw, bh);
+      const yAt = (u) => by + Math.sin(u * Math.PI) * sag;       // 가운데가 살짝 처짐
+      // 끈 (양 끝 고리 → 화면 위쪽 모서리)
+      ctx.strokeStyle = 'rgba(70,70,70,.75)'; ctx.lineWidth = 2.2;
+      [[bx + 18, by + 18, 30, 0], [bx + bw - 18, by + 18, W - 30, 0]].forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, y1 - 20, x2, y2); ctx.stroke(); });
+      // 벽 그림자
+      ctx.save(); ctx.filter = 'blur(14px)'; ctx.fillStyle = 'rgba(0,0,0,.20)';
+      ctx.beginPath(); ctx.moveTo(bx + 10, by + 22);
+      for (let i = 0; i <= 20; i++) { const u = i / 20; ctx.lineTo(bx + 10 + u * bw, yAt(u) + 22); }
+      for (let i = 20; i >= 0; i--) { const u = i / 20; ctx.lineTo(bx + 10 + u * bw, yAt(u) + bh + 26); }
+      ctx.fill(); ctx.restore();
+      // 현수막 본체: 세로 띠로 나눠 물결지게
+      const strips = 180, sw = bw / strips;
+      for (let i = 0; i < strips; i++) {
+        const u = (i + .5) / strips, y = yAt(u) + Math.sin(u * Math.PI * 4) * 1.6;
+        ctx.drawImage(face, i * sw, 0, sw + 1, bh, bx + i * sw, y, sw + 1, bh);
       }
-      // 클럽명 (길면 글자 크기 자동 축소)
-      const name = st.club.trim() || '우리 클럽 이름';
-      const maxW = bx + bw - 40 - tx;
-      let fs = 74; ctx.font = `800 ${fs}px Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
-      while (ctx.measureText(name).width > maxW && fs > 30) { fs -= 2; ctx.font = `800 ${fs}px Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`; }
-      const center = !st.logo, x0 = center ? W / 2 : tx;
-      ctx.textAlign = center ? 'center' : 'left'; ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = st.club.trim() ? '#fff' : 'rgba(255,255,255,.45)';
-      const sub = st.sub.trim();
-      ctx.fillText(name, x0, by + bh / 2 + (sub ? fs * 0.18 : fs * 0.36));
-      if (sub) { ctx.font = `600 22px Pretendard, sans-serif`; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(sub.split('').join(' '), x0, by + bh / 2 + fs * 0.18 + 36); }
+      // 금속 고리 (모서리 + 위아래 가운데)
+      const ring = (x, y) => { ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fillStyle = '#c9c9c9'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#8d8d8d'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#ececec'; ctx.fill(); };
+      [0, 0.5, 1].forEach(u => { const x = bx + 18 + u * (bw - 36); ring(x, yAt(u) + 18); ring(x, yAt(u) + bh - 18); });
     }
     function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+    let wmDark = null;                                       // 흰 배경용: 워터마크 로고를 검정으로
     function watermark() {
       const wm = ready.get('wm');
       ctx.save(); ctx.globalAlpha = .9;
-      if (wm) { const ww = 200, wh = wm.height * (ww / wm.width); ctx.drawImage(wm, W - ww - 34, H - wh - 30, ww, wh); }
+      if (wm && !wmDark) { const t = document.createElement('canvas'); t.width = wm.width; t.height = wm.height; const tx = t.getContext('2d'); tx.drawImage(wm, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#111'; tx.fillRect(0, 0, t.width, t.height); wmDark = t; }
+      if (wmDark) { const ww = 200, wh = wmDark.height * (ww / wmDark.width); ctx.drawImage(wmDark, W - ww - 34, H - wh - 30, ww, wh); }
       ctx.restore();
-      ctx.font = '500 19px Pretendard, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.textAlign = 'left';
+      ctx.font = '500 19px Pretendard, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.textAlign = 'left';
       ctx.fillText('합성 이미지 · 실제 제품과 다를 수 있어요', 34, H - 36);
     }
 
