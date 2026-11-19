@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>룩북 관리자</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f4f4f2;--card:#fff;--fg:#111;--sub:#777;--line:#e4e4e1;--soft:#f7f7f5;--accent:#111;--danger:#d23c2a;--ok:#1f6b48;--warn:#b86e00;--r:8px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--fg);font:14px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer;background:none;border:0}
+  a{color:inherit;text-decoration:none}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border:1px solid var(--line);background:#fff;border-radius:var(--r);font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+  .btn:hover{border-color:#bbb}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{opacity:.88}
+  .btn.danger{color:var(--danger)}
+  .btn.danger:hover{border-color:var(--danger)}
+  .btn.sm{height:30px;padding:0 10px;font-size:12px}
+  .btn.icon{width:30px;padding:0}
+  .btn:disabled{opacity:.4;cursor:default}
+  .btn.dirty::after{content:"";width:6px;height:6px;border-radius:50%;background:#f5a623}
+  input[type=text],input[type=number],input[type=url],input[type=search],select,textarea{width:100%;height:38px;border:1px solid var(--line);border-radius:var(--r);padding:0 12px;background:#fff;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#111}
+  input:disabled,select:disabled{background:var(--soft);color:#aaa}
+  label.f{display:block}
+  label.f > span{display:block;font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:500}
+  .hint{font-size:12px;color:var(--sub)}
+
+  /* layout */
+  .top{position:sticky;top:0;z-index:20;height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
+  .top h1{font-size:15px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+  .top h1 span{font-weight:400;color:var(--sub);margin-left:6px}
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .save-state{font-size:12px;color:var(--sub);margin-right:4px}
+  .wrap{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 60px)}
+  .side{background:#fff;border-right:1px solid var(--line);padding:20px 16px 40px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+  .side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:0 6px}
+  .side-head h2{font-size:13px;font-weight:700}
+  .yr{font-size:12px;font-weight:700;color:var(--sub);margin:18px 6px 6px;letter-spacing:.06em}
+  .ss{font-size:11px;color:#999;margin:10px 6px 4px;letter-spacing:.08em}
+  .book{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;border-radius:var(--r);font-size:13px}
+  .book:hover{background:var(--soft)}
+  .book.on{background:#111;color:#fff}
+  .book small{font-size:11px;color:#999;white-space:nowrap}
+  .book.on small{color:#bbb}
+  .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:#eee;color:#666;margin-left:4px;vertical-align:1px}
+  .book.on .tag{background:#333;color:#ccc}
+  .main{padding:28px 32px 120px;min-width:0}
+  .banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff8e6;border:1px solid #f0dca8;border-radius:var(--r);padding:10px 14px;margin-bottom:18px;font-size:13px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:20px}
+  .panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+  .panel-head h2{font-size:18px;font-weight:700}
+  .panel-head h3{font-size:15px;font-weight:700}
+  .fields{display:grid;grid-template-columns:1.2fr 2fr 1fr 1.3fr 1.6fr;gap:14px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:14px;cursor:pointer;width:max-content}
+  .chk input{width:16px;height:16px;accent-color:#111}
+
+  /* looks */
+  .look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+  .lcard{background:#fff;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;transition:transform .15s;position:relative}
+  .lcard:focus-within{z-index:5}
+  .lthumb{border-radius:11px 11px 0 0;overflow:hidden}
+  /* 카드 안 상품 검색 */
+  .psearch{position:relative}
+  .psearch .ps-in{height:38px;padding-left:34px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E") 11px 50% no-repeat}
+  .ps-drop{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.14);z-index:30;max-height:360px;overflow-y:auto;padding:4px;min-width:280px}
+  .ps-opt{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:6px;border-radius:8px;cursor:pointer}
+  .ps-opt.on,.ps-opt:hover{background:var(--soft)}
+  .ps-opt .st{width:40px;height:40px;border-radius:6px;background:#eee center/cover no-repeat}
+  .ps-opt .sn{font-size:12.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .ps-opt .sn mark{background:#fff0a0;color:inherit;border-radius:2px}
+  .ps-opt .sm{font-size:11px;color:var(--sub);margin-top:2px}
+  .ps-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:#111;color:#fff;white-space:nowrap}
+  .ps-opt.added .ps-tag{background:var(--ok)}
+  .ps-msg{padding:12px;font-size:12px;color:var(--sub);text-align:center;line-height:1.6}
+  /* 상품 목록 다이얼로그 */
+  .cat-status{background:var(--soft);border-radius:var(--r);padding:12px 14px;font-size:13px}
+  .cat-box{border:1px solid var(--line);border-radius:10px;padding:16px}
+  .cat-box h4{font-size:14px;margin-bottom:10px}
+  .cat-steps{padding-left:18px;font-size:13px;color:#444;line-height:1.8;margin-bottom:12px}
+  .cat-drop{display:block;border:1.5px dashed #c9c9c4;border-radius:10px;padding:22px;text-align:center;font-size:13px;color:var(--sub);cursor:pointer}
+  .cat-drop:hover,.cat-drop.over{border-color:#111;color:#111;background:var(--soft)}
+  .cat-drop b{color:#111;text-decoration:underline;text-underline-offset:3px}
+  .cat-names summary{font-size:13px;font-weight:600;color:var(--fg)}
+  /* 룩북 안 카테고리 필터 */
+  .cat-bar{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 16px}
+  .cat-chip{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:20px;background:#fff;font-size:12.5px;font-weight:500;color:#555}
+  .cat-chip span{color:#aaa;margin-left:3px;font-weight:400}
+  .cat-chip:hover{border-color:#bbb}
+  .cat-chip.on{background:#111;border-color:#111;color:#fff}
+  .cat-chip.on span{color:#bbb}
+  /* 사이드바: 룩북 아래 하위 카테고리 */
+  .subcats{margin:2px 0 6px 10px;border-left:1px solid var(--line);padding-left:6px}
+  .subcat{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:6px 10px;border-radius:var(--r);font-size:12.5px;color:#555}
+  .subcat:hover{background:var(--soft)}
+  .subcat.on{background:#111;color:#fff}
+  .subcat small{font-size:11px;color:#999}
+  .subcat.on small{color:#bbb}
+  .book.on-parent{background:var(--soft);font-weight:600}
+  /* 룩북 설정: 하위 카테고리 칸 */
+  .subcat-edit{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+  .sc-lbl{font-size:12px;font-weight:600;color:#333;margin-right:6px}
+  .sc-chip{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 4px 0 12px;border-radius:20px;background:var(--soft);font-size:12.5px;font-weight:500}
+  .sc-chip small{color:#999;font-size:11px}
+  .sc-chip button{width:22px;height:22px;border-radius:50%;font-size:11px;color:#888}
+  .sc-chip button:hover{background:#e3e3e0;color:var(--danger)}
+  .subcat-edit .sc-add{width:260px;height:30px;border-radius:20px;font-size:12.5px}
+  .lcard.dragging{opacity:.35}
+  .lcard.over-l{box-shadow:-4px 0 0 0 #111}
+  .lcard.over-r{box-shadow:4px 0 0 0 #111}
+  .lthumb{position:relative;aspect-ratio:3/4;background:var(--soft);cursor:grab;user-select:none}
+  .lthumb:active{cursor:grabbing}
+  .lthumb img,.lthumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+  .lthumb .no{position:absolute;left:10px;top:10px;background:#111;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.04em}
+  .lthumb .badges{position:absolute;right:10px;top:10px;display:flex;gap:4px}
+  .lthumb .badges span{background:var(--ok);color:#fff;font-size:10px;font-weight:700;padding:3px 7px;border-radius:20px}
+  .lthumb .badges .gif{background:#6b3fd1}
+  .lthumb .badges .vid{background:rgba(0,0,0,.65)}
+  .lthumb .handle{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(255,255,255,.92);font-size:11px;padding:4px 10px;border-radius:20px;opacity:0;transition:opacity .2s;white-space:nowrap}
+  .lthumb:hover .handle{opacity:1}
+  .lbody{padding:14px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .plist{display:flex;flex-direction:column;gap:6px}
+  .pitem{display:grid;grid-template-columns:40px 1fr auto;gap:8px;align-items:center;background:var(--soft);border-radius:var(--r);padding:6px 6px 6px 6px}
+  .pitem .pt{width:40px;height:40px;border-radius:6px;background:#e8e8e5 center/cover no-repeat}
+  .pitem .pn{font-size:12px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .pitem .pm{font-size:11px;color:var(--sub)}
+  .pitem .pm.miss{color:var(--warn)}
+  .pitem .px{display:flex;flex-direction:column}
+  .pitem .px button{width:22px;height:18px;font-size:11px;color:#888;border-radius:4px}
+  .pitem .px button:hover{background:#e6e6e3;color:#111}
+  .pitem .px button:disabled{visibility:hidden}
+  .warn{font-size:12px;color:var(--warn)}
+  .lact{display:flex;gap:6px;margin-top:auto;padding-top:4px}
+  .lact .grow{flex:1}
+  details summary{font-size:12px;color:var(--sub);cursor:pointer;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"+ "}
+  details[open] summary::before{content:"− "}
+  details input{margin-top:6px}
+  .drop{border:1.5px dashed #c9c9c4;border-radius:12px;min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--sub);cursor:pointer;padding:16px;background:#fff;transition:.2s}
+  .drop:hover,.drop.over{border-color:#111;color:#111;background:var(--soft)}
+  .drop b{font-size:28px;font-weight:300;line-height:1}
+  .drop input{display:none}
+  .empty-main{text-align:center;padding:120px 20px;color:var(--sub)}
+  .empty-main h2{color:var(--fg);font-size:18px;margin-bottom:8px}
+
+  /* dialog */
+  dialog{border:0;border-radius:14px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 48px);box-shadow:0 20px 60px rgba(0,0,0,.25);margin:auto}
+  dialog.wide{width:min(720px,calc(100vw - 32px))}
+  dialog::backdrop{background:rgba(0,0,0,.4)}
+  .dlg-head{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0}
+  .dlg-head h3{font-size:17px;font-weight:700}
+  .dlg-body{padding:18px 24px;overflow-y:auto;max-height:calc(100vh - 200px)}
+  .dlg-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:0 24px 22px}
+  .dlg-foot .grow{flex:1}
+  .row{display:grid;gap:10px;align-items:center}
+  .stack{display:flex;flex-direction:column;gap:14px}
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .tbl td:first-child{width:70px;font-weight:600}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#fff}
+  .seg button{height:34px;padding:0 14px;font-size:13px}
+  .seg button.on{background:#111;color:#fff}
+  .steps{counter-reset:s;display:flex;flex-direction:column;gap:10px;font-size:13px}
+  .steps li{list-style:none;display:flex;gap:10px}
+  .steps li::before{counter-increment:s;content:counter(s);flex:none;width:22px;height:22px;border-radius:50%;background:#111;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+  .issues{background:#fff8e6;border-radius:var(--r);padding:10px 14px;font-size:12px;color:#8a5a00;line-height:1.7}
+  .sample{display:grid;grid-template-columns:64px 1fr 110px;gap:10px;align-items:center;padding:16px;background:var(--soft);border-radius:10px}
+  .sample .t{aspect-ratio:1;background:#ddd;border-radius:var(--sr,8px)}
+  .sample .s{height:42px;border:1px solid #d4d4d4;background:#fff;border-radius:var(--sr,8px);display:flex;align-items:center;padding:0 12px;font-size:13px;color:#888}
+  .sample .b{height:42px;background:#111;color:#fff;border-radius:var(--sr,8px);display:grid;place-items:center;font-size:13px;font-weight:600}
+  input[type=range]{width:100%;accent-color:#111}
+
+  /* search */
+  .sbar{display:flex;gap:8px;position:sticky;top:0;background:#fff;padding-bottom:12px}
+  .sres{display:flex;flex-direction:column;gap:4px;min-height:240px}
+  .sitem{display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:center;padding:8px;border-radius:var(--r)}
+  .sitem:hover{background:var(--soft)}
+  .sitem .st{width:52px;height:52px;border-radius:6px;background:#eee center/cover no-repeat}
+  .sitem .sn{font-size:13px;line-height:1.4}
+  .sitem .sm{font-size:12px;color:var(--sub);margin-top:2px}
+  .sitem .btn.added{background:var(--ok);border-color:var(--ok);color:#fff}
+  .smsg{padding:40px 10px;text-align:center;color:var(--sub);font-size:13px;line-height:1.7}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid #ccc;border-top-color:#111;border-radius:50%;animation:sp 0.7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* preview: 오른쪽에 붙는 패널 (편집하면서 보기) */
+  :root{--pv-w:46vw}
+  .pv{position:fixed;top:60px;right:0;bottom:0;width:var(--pv-w);background:#fff;border-left:1px solid var(--line);z-index:15;display:none;flex-direction:column}
+  body.pv-on .pv{display:flex}
+  body.pv-on .main{margin-right:var(--pv-w)}
+  body.pv-on .fields{grid-template-columns:1fr 1fr}
+  body.pv-on .panel-head{flex-wrap:wrap}
+  .pv-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);gap:8px}
+  .pv-bar .hint{flex:1;text-align:center}
+  .pv-stage{position:relative;flex:1;background:#e9e9e6;overflow:hidden}
+  .pv-box{position:absolute;top:0;left:50%;background:#fff;box-shadow:0 0 0 1px #d6d6d2}
+  .pv-box iframe{display:block;border:0;width:100%;height:100%;background:#fff}
+  .pv-msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;padding:32px;background:rgba(244,244,242,.97);z-index:2}
+  .pv-msg.on{display:flex}
+  .pv-msg > div{max-width:440px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;font-size:13px;line-height:1.7}
+  .pv-msg h4{font-size:15px;margin-bottom:8px}
+  .pv-msg ol{padding-left:18px;margin:8px 0 16px;color:#444}
+  .pv-loading{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:12px;padding:6px 12px;border-radius:20px;z-index:3;display:none}
+  .pv-loading.on{display:block}
+  .pv-old{position:absolute;left:12px;right:12px;bottom:12px;z-index:3;background:#fff4d6;border:1px solid #f0d58a;color:#7a5200;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.6;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+  .pv-old[hidden]{display:none}
+  #btnPreview.on{background:#111;color:#fff;border-color:#111}
+  @media (max-width:1100px){:root{--pv-w:100vw}}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,12px);background:#111;color:#fff;font-size:13px;padding:11px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:calc(100vw - 32px);text-align:center}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:1100px){.fields{grid-template-columns:1fr 1fr}}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}.side{position:static;height:auto}.main{padding:20px 16px 80px}.top{height:auto;padding:12px 16px;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261118-sub</span></h1>
+  <div class="top-actions">
+    <span class="save-state" id="saveState"></span>
+    <button class="btn" id="btnSeasons">시즌 관리</button>
+    <button class="btn" id="btnNames">상품 목록</button>
+    <button class="btn" id="btnDesign">디자인</button>
+    <button class="btn" id="btnPreview">미리보기</button>
+    <button class="btn" id="btnSave">저장</button>
+    <button class="btn primary" id="btnExport">내보내기</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="side-head"><h2>룩북</h2><button class="btn sm" id="btnAddBook">+ 새 룩북</button></div>
+    <div id="tree"></div>
+  </aside>
+  <main class="main">
+    <div id="banner"></div>
+    <div id="main"></div>
+  </main>
+</div>
+
+<dialog id="dlg"></dialog>
+<aside class="pv" id="pv" aria-label="미리보기">
+  <div class="pv-bar">
+    <div class="seg" id="pvSeg"><button class="on" data-d="pc">PC</button><button data-d="mobile">모바일</button></div>
+    <span class="hint">저장 전 편집 내용 그대로 보여요 · 실제 사이트는 [내보내기] 후 업로드해야 바뀌어요</span>
+    <button class="btn sm" id="pvReload" title="다시 불러오기">↻</button>
+    <button class="btn sm" id="pvClose">닫기</button>
+  </div>
+  <div class="pv-stage" id="pvStage">
+    <div class="pv-box" id="pvBox"><iframe id="pvFrame" title="미리보기"></iframe></div>
+    <span class="pv-loading" id="pvLoading">불러오는 중…</span>
+    <div class="pv-old" id="pvOld" hidden>미리보기에 <b>예전 lookbook.js</b>가 열려 있어요. 새 lookbook.js를 올린 뒤 <b>강력 새로고침</b>(Ctrl+Shift+R / Cmd+Shift+R) 해 주세요. 그 전에는 썸네일 비율 같은 새 설정이 미리보기에 안 보여요.</div>
+    <div class="pv-msg" id="pvMsg"><div>
+      <h4>미리보기를 불러오지 못했어요</h4>
+      <p>대부분 <b>예전 index.html</b>이 열려서 그래요. 아래를 확인해 주세요.</p>
+      <ol>
+        <li>admin.html과 <b>같은 폴더</b>에 있는 index.html을 <b>이번에 받은 zip의 index.html로 교체</b>했는지</li>
+        <li>교체했다면 브라우저 <b>강력 새로고침</b> (Windows Ctrl+Shift+R / Mac Cmd+Shift+R)</li>
+        <li>내 컴퓨터 파일로 열었다면 <b>Chrome</b>으로 열기 (Safari는 내 컴퓨터 파일끼리 연결을 막아요)</li>
+      </ol>
+      <button class="btn primary" id="pvRetry">다시 시도</button>
+    </div></div>
+  </div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="lookbook-data.js"></script>
+<script>
+/* =====================================================================
+   룩북 관리자 — 편집 → [저장] → [내보내기] → ZIP을 카페24 룩북 폴더에 업로드
+   ※ 상품 검색·상품명 자동 채우기는 이 파일을 카페24(spofl.co.kr)에 올려서 열 때 동작합니다.
+   ===================================================================== */
+const SHOP = 'https://www.spofl.co.kr';
+const ORIGIN = location.protocol === 'file:' ? SHOP : '';     // 같은 도메인이면 상대경로
+const API_HOST = 'https://api.spofl.co.kr';                // 사이트가 실제로 쓰는 API 서버 (테스트용: ?api=주소)
+const API_BASE = new URLSearchParams(location.search).get('api') || API_HOST;
+const API = {
+  list: '/api/v1/product/recommendMap/list',
+  one: (no) => `/api/v1/product/recommendMap/${no}`,
+  page: (no) => `/product/detail.html?product_no=${no}`,
+  search: (q) => `/product/search.html?keyword=${encodeURIComponent(q)}`,
+};
+const IMG_MAX_W = 1200;           // JPG/PNG: 3:4(세로) 비율로 자동 자르기 + 최대 가로 1200px (1200×1600)
+const THUMB_RATIO = 3 / 4;        // 룩 썸네일 비율 (가로:세로 = 3:4) — lookbook.js 와 같음
+
+// 새 이미지(_img, base64)는 화면·미리보기에선 Blob 주소로 씀 → 수정할 때마다 수 MB 글자를 다시 그리지 않음
+const imgCache = new WeakMap();   // look → { src, blob, url, key }
+function lookImg(l) {
+  if (!l._img) return null;
+  let c = imgCache.get(l);
+  if (!c || c.src !== l._img) {
+    if (c) URL.revokeObjectURL(c.url);
+    const mime = (l._img.match(/^data:([^;,]+)/) || [])[1] || 'image/jpeg';
+    const blob = new Blob([dataUrlBytes(l._img)], { type: mime });
+    c = { src: l._img, blob, url: URL.createObjectURL(blob), key: 'k' + Math.random().toString(36).slice(2) };
+    imgCache.set(l, c);
+    if (mime === 'image/gif') makePoster(blob).then(u => { c.poster = u; swapPoster(c.key, u); }).catch(() => {});
+  }
+  return c;
+}
+// GIF 첫 장면을 멈춘 그림으로 (관리자 화면이 GIF 여러 개로 버벅이지 않게)
+async function makePoster(blob) {
+  const bmp = await createImageBitmap(blob);
+  const cv = document.createElement('canvas'); cv.width = bmp.width; cv.height = bmp.height;
+  cv.getContext('2d').drawImage(bmp, 0, 0);
+  const pb = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.85));
+  return URL.createObjectURL(pb);
+}
+const swapPoster = (key, url) => document.querySelectorAll(`img[data-pk="${CSS.escape(key)}"]`).forEach(im => { im.src = url; });
+const posterCache = new Map();    // 이미 올라간 GIF 경로 → 멈춘 그림 (사이트에 올린 관리자에서만 가능, 내 컴퓨터 파일이면 GIF 그대로)
+function gifPoster(path) {
+  if (posterCache.has(path)) return posterCache.get(path) || path;
+  posterCache.set(path, '');
+  fetch(path).then(r => r.ok ? r.blob() : Promise.reject()).then(makePoster)
+    .then(u => { posterCache.set(path, u); swapPoster('p:' + path, u); }).catch(() => {});
+  return path;
+}
+
+/* 룩북 안 카테고리 관리 */
+function openCategories() {
+  const b = book(); if (!b) return;
+  const used = (id) => b.looks.filter(l => l.category === id).length;
+  const rows = () => b.categories.map((c, i) => `<tr><td style="width:40px;color:#999">${i + 1}</td><td><input type="text" data-cn="${i}" value="${esc(c.name)}"></td>
+      <td style="width:170px;text-align:right;white-space:nowrap"><span class="hint" style="margin-right:6px">룩 ${used(c.id)}</span>
+        <button class="btn sm icon" data-cmv="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="btn sm icon" data-cmv="${i}" data-dir="1" ${i === b.categories.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="btn sm danger" data-cdel="${i}">삭제</button></td></tr>`).join('') || '<tr><td colspan="3" class="hint">아직 카테고리가 없어요</td></tr>';
+  openDialog(`하위 카테고리 관리 · ${esc(b.title)}`, `
+    <p class="hint" style="margin-bottom:10px">사이트에서 룩북 제목 아래 가운데에 <b>ALL · 카테고리1 · 카테고리2</b> 순서로 나열되고, 누르면 그 카테고리 룩만 보여요. 룩이 하나도 없는 카테고리는 사이트에 안 보여요.</p>
+    <table class="tbl"><tbody id="cRows">${rows()}</tbody></table>
+    <div class="row" style="grid-template-columns:1fr auto;margin-top:16px">
+      <input type="text" id="cName" placeholder="카테고리 이름 (예: CATEGORY 1)">
+      <button class="btn" id="cAdd">추가</button>
+    </div>`, `<button class="btn primary" data-x>완료</button>`, d => {
+    const re = () => { $('#cRows', d).innerHTML = rows(); };
+    d.addEventListener('input', e => { const i = e.target.dataset.cn; if (i != null) { b.categories[+i].name = e.target.value; changed({ tree: false }); } });
+    d.addEventListener('click', e => {
+      const mv = e.target.dataset.cmv, del = e.target.dataset.cdel;
+      if (mv != null) { const i = +mv, j = i + +e.target.dataset.dir; [b.categories[i], b.categories[j]] = [b.categories[j], b.categories[i]]; re(); changed({ tree: false }); }
+      if (del != null) {
+        const c = b.categories[+del], n = used(c.id);
+        if (n && !confirm(`'${c.name}' 카테고리를 삭제할까요?\n이 카테고리의 룩 ${n}개는 '미지정'이 돼요. (룩은 지워지지 않아요)`)) return;
+        b.looks.forEach(l => { if (l.category === c.id) delete l.category; });
+        b.categories.splice(+del, 1); re(); changed({ tree: false });
+      }
+    });
+    const add = () => {
+      const name = $('#cName', d).value.trim(); if (!name) return toast('카테고리 이름을 입력하세요');
+      b.categories.push({ id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name });
+      $('#cName', d).value = ''; re(); changed({ tree: false }); $('#cName', d).focus();
+    };
+    $('#cAdd', d).onclick = add;
+    $('#cName', d).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+    d.onclose = () => renderMain();
+    setTimeout(() => $('#cName', d).focus(), 50);
+  });
+}
+const GIF_WARN_MB = 4;            // GIF는 원본 그대로 사용 (움직임 유지) — 용량 경고 기준
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const won = (n) => n ? Number(n).toLocaleString('ko-KR') + '원' : '';
+const SOURCE = clone(window.LOOKBOOK_DATA || { seasons: [], lookbooks: [], products: {} });
+
+let D = normalize(clone(SOURCE));
+let cur = null;
+
+function normalize(d) {
+  d.design = { radius: 8, roundLooks: false, maxWidth: 1200, ...(d.design || {}) };
+  delete d.design.ratio;                 // 비율은 3:4 고정 (예전 저장본에 남은 값 정리)
+  d.seasons = d.seasons || [{ key: 'SS', label: 'SPRING/SUMMER' }, { key: 'FW', label: 'FALL/WINTER' }];
+  d.lookbooks = d.lookbooks || [];
+  d.products = d.products || {};
+  d._pinfo = d._pinfo || {};          // 관리자 화면용 상품 사진·가격 (내보내기에는 안 들어감)
+  d.lookbooks.forEach(b => {
+    b.type = b.type === 'special' ? 'special' : 'season';
+    b.looks = b.looks || [];
+    b.categories = Array.isArray(b.categories) ? b.categories.filter(c => c && c.id) : [];    // 룩북 안 카테고리 [{ id, name }]
+    b.looks.forEach(l => {
+      l.products = (l.products || []).map(Number);
+      if (l.category && !b.categories.some(c => c.id === l.category)) delete l.category;
+    });
+  });
+  return d;
+}
+const book = () => D.lookbooks.find(b => b.id === cur);
+const isSpecial = (b) => b.type === 'special';
+const group = (b) => isSpecial(b) ? D.lookbooks.filter(isSpecial) : D.lookbooks.filter(x => !isSpecial(x) && x.year === b.year && x.season === b.season);
+
+/* =====================================================================
+   저장 (이 브라우저의 IndexedDB)
+   ===================================================================== */
+const idb = (() => {
+  let p;
+  const open = () => p ||= new Promise((res, rej) => {
+    const r = indexedDB.open('victor-lookbook-admin', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => { const q = fn(db.transaction('kv', mode).objectStore('kv')); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); };
+  return { get: k => tx('readonly', s => s.get(k)), set: (k, v) => tx('readwrite', s => s.put(v, k)), del: k => tx('readwrite', s => s.delete(k)) };
+})();
+let saveT, dirty = false;
+const hhmm = () => new Date().toTimeString().slice(0, 5);
+async function saveNow(manual) {
+  clearTimeout(saveT);
+  try {
+    await idb.set('draft', { D, cur, at: Date.now() });
+    dirty = false; $('#btnSave').classList.remove('dirty');
+    $('#saveState').textContent = `저장됨 ${hhmm()}`;
+    if (manual) toast('저장했어요 · 사이트에 반영하려면 [내보내기] 후 업로드하세요');
+  } catch {
+    $('#saveState').textContent = '저장 실패';
+    if (manual) toast('저장에 실패했어요. [내보내기]로 백업해 두세요');
+  }
+}
+function changed({ tree = true, main = false } = {}) {
+  if (tree) renderTree();
+  if (main) renderMain();
+  dirty = true; $('#btnSave').classList.add('dirty');
+  $('#saveState').textContent = '저장 안 됨';
+  clearTimeout(saveT); saveT = setTimeout(() => saveNow(false), 3000);   // 자동 저장 (안전장치) — 입력이 멈추고 3초 뒤
+  pushPreview();
+}
+$('#btnSave').onclick = () => saveNow(true);
+document.addEventListener('keydown', e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(true); } });
+
+/* =====================================================================
+   상품 정보 — 상품 API → 카페24 상품페이지 순서로 시도
+   ===================================================================== */
+const pick = (o, ...ks) => { for (const k of ks) if (o && o[k] != null && o[k] !== '') return o[k]; };
+const unwrapOne = (j) => { let d = j; for (let i = 0; i < 3 && d && typeof d === 'object' && !Array.isArray(d); i++) { const n = pick(d, 'data', 'result', 'product', 'item'); if (n == null || typeof n !== 'object') break; d = n; } return Array.isArray(d) ? d[0] : d; };
+const unwrapList = (j) => { let d = j; for (let i = 0; i < 3 && d && !Array.isArray(d) && typeof d === 'object'; i++) { const n = pick(d, 'data', 'result', 'list', 'items', 'products', 'content'); if (n == null) break; d = n; } return Array.isArray(d) ? d : []; };
+const num = (v) => Number(String(v ?? '').replace(/[^\d.]/g, '')) || 0;
+const absUrl = (u) => !u ? '' : u.startsWith('//') ? 'https:' + u : u.startsWith('/') ? (ORIGIN || location.origin) + u : u;
+function normProduct(p) {
+  if (!p || typeof p !== 'object') return {};
+  const image = pick(p, 'imageUrl', 'image', 'listImage', 'list_image', 'smallImage', 'small_image', 'tinyImage', 'thumbnail', 'detailImage', 'detail_image', 'mainImage');
+  const price = num(pick(p, 'price', 'retailPrice', 'consumerPrice', 'originPrice'));
+  const sale = num(pick(p, 'salePrice', 'discountPrice', 'sellPrice', 'sale_price', 'finalPrice'));
+  return {
+    no: num(pick(p, 'productNo', 'product_no', 'no', 'id')),
+    name: pick(p, 'productName', 'product_name', 'name', 'title') || '',
+    image: absUrl(typeof image === 'object' ? pick(image, 'url', 'src') : image),
+    price: sale && sale < price ? sale : price,
+  };
+}
+async function fetchT(url, ms = 7000) {
+  const c = new AbortController(); const t = setTimeout(() => c.abort(), ms);
+  // 다른 주소(API 서버)에는 쿠키를 보내지 않음 → CORS 문제 방지
+  const same = !/^https?:/i.test(url) || new URL(url).origin === location.origin;
+  try { const r = await fetch(url, { credentials: same ? 'include' : 'omit', signal: c.signal }); if (!r.ok) throw new Error(r.status); return r; }
+  finally { clearTimeout(t); }
+}
+async function fromPage(no) {
+  const html = await (await fetchT(ORIGIN + API.page(no))).text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const meta = (n) => doc.querySelector(`meta[property="${n}"]`)?.content;
+  const price = num(meta('product:price:amount')), sale = num(meta('product:sale_price:amount'));
+  return { no, name: (meta('og:title') || '').trim(), image: absUrl(meta('og:image')), price: sale && sale < price ? sale : price };
+}
+const inflight = {};
+function fetchInfo(no) {
+  if (inflight[no]) return inflight[no];
+  return inflight[no] = (async () => {
+    const c = catInfo(no);                                   // 받아 둔 상품 목록에 있으면 바로 사용
+    if (c) {
+      D._pinfo[no] = { name: c.name, image: c.image, price: c.price };
+      if (!D.products[no]) D.products[no] = c.name;
+      if (c.image) return true;
+    }
+    let p = {};
+    try { p = normProduct(unwrapOne(await (await fetchT(API_BASE + API.one(no))).json())); } catch {}
+    if (!p.name || !p.image) { try { const c = await fromPage(no); p = { ...c, ...Object.fromEntries(Object.entries(p).filter(([, v]) => v)) }; } catch {} }
+    if (p.name || p.image) {
+      D._pinfo[no] = { name: p.name, image: p.image, price: p.price };
+      if (p.name && !D.products[no]) D.products[no] = p.name;
+      return true;
+    }
+    return false;
+  })();
+}
+// 화면에 보이는 상품 중 이름이 없는 것 자동 채우기
+const tried = new Set();
+function autofillNames(nos) {
+  const todo = nos.filter(n => (!D.products[n] || !D._pinfo[n]) && !tried.has(n));
+  if (!todo.length) return;
+  todo.forEach(n => tried.add(n));
+  Promise.all(todo.map(fetchInfo)).then(rs => { if (rs.some(Boolean)) { changed({ tree: false }); refreshProductLists(); } });
+}
+
+/* =====================================================================
+   상품 목록(카탈로그) — 한 번 받아두면 관리자 안에서 바로 검색
+   받는 방법: ① 카페24 상품 엑셀/CSV 파일 넣기 (어디서 열어도 됨)
+             ② [사이트에서 불러오기] (admin.html을 카페24에 올려서 열었을 때)
+   ===================================================================== */
+let CATALOG = [];                       // [{ no, name, price, image, _n, _c }]
+let catalogAt = 0;
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const normText = (s) => String(s || '').toLowerCase().replace(/[\s\-_()[\]{}·,./+&'"]/g, '');
+const toCho = (s) => [...s].map(c => { const k = c.charCodeAt(0) - 0xAC00; return k >= 0 && k < 11172 ? CHO[Math.floor(k / 588)] : c; }).join('');
+const isChoOnly = (s) => /^[ㄱ-ㅎ]+$/.test(s);
+function indexItem(p) { const n = normText(p.name); return { ...p, _n: n, _c: toCho(n) }; }
+function setCatalog(list, at = Date.now()) {
+  const map = new Map(CATALOG.map(p => [p.no, p]));
+  list.forEach(p => { if (p.no && p.name) map.set(p.no, indexItem({ ...(map.get(p.no) || {}), ...Object.fromEntries(Object.entries(p).filter(([, v]) => v)) })); });
+  CATALOG = [...map.values()].sort((a, b) => b.no - a.no);
+  catalogAt = at;
+  idb.set('catalog', { list: CATALOG.map(({ _n, _c, ...p }) => p), at }).catch(() => {});
+}
+async function loadCatalog() {
+  try { const c = await idb.get('catalog'); if (c?.list?.length) { CATALOG = c.list.map(indexItem); catalogAt = c.at; } } catch {}
+}
+const catInfo = (no) => CATALOG.find(p => p.no === no);
+
+// 여러 단어는 순서 상관없이 모두 포함, 띄어쓰기·대소문자·기호 무시, 초성(ㅋㄹㅇㅍ)도 가능
+function searchLocal(q, limit = 30) {
+  const tokens = String(q).trim().split(/\s+/).map(normText).filter(Boolean);
+  if (!tokens.length) return [];
+  const full = normText(q);
+  const out = [];
+  for (const p of CATALOG) {
+    let ok = true;
+    for (const t of tokens) {
+      if (p._n.includes(t) || String(p.no) === t || (isChoOnly(t) && p._c.includes(t))) continue;
+      ok = false; break;
+    }
+    if (!ok) continue;
+    const score = (p._n.startsWith(full) ? 4 : 0) + (p._n.includes(full) ? 2 : 0) + (String(p.no) === full ? 8 : 0);
+    out.push([score, p]);
+  }
+  return out.sort((a, b) => b[0] - a[0] || b[1].no - a[1].no).slice(0, limit).map(x => x[1]);
+}
+
+// 사이트에서 검색 (카페24에 올린 관리자에서만): 상품 목록 API → 카페24 검색 페이지
+async function searchRemote(q) {
+  let results = [];
+  try {
+    const raw = unwrapList(await (await fetchT(API_BASE + API.list)).json());
+    const all = raw.flatMap(x => { const inner = pick(x, 'products', 'productList', 'items'); return Array.isArray(inner) ? inner : [x]; }).map(normProduct).filter(p => p.no && p.name);
+    if (all.length) setCatalog(all);
+    results = searchLocal(q);
+  } catch {}
+  if (!results.length) {
+    const tokens = String(q).trim().split(/\s+/);
+    // 카페24 검색은 단어 하나가 더 잘 걸려서, 전체 → 가장 긴 단어 순서로 시도
+    for (const kw of [q.trim(), tokens.sort((a, b) => b.length - a.length)[0]]) {
+      try { const r = await searchCafe24(kw); if (r.length) { setCatalog(r); break; } } catch {}
+    }
+    results = searchLocal(q);
+  }
+  return results;
+}
+// [사이트에서 불러오기]: 상품 목록 API 전체 + 카페24 검색 결과 페이지들을 모아서 카탈로그 만들기
+async function syncFromSite(keyword, onProgress, crawlPages = true) {
+  let count = 0;
+  try {
+    const raw = unwrapList(await (await fetchT(API_BASE + API.list, 15000)).json());
+    const all = raw.flatMap(x => { const inner = pick(x, 'products', 'productList', 'items'); return Array.isArray(inner) ? inner : [x]; }).map(normProduct).filter(p => p.no && p.name);
+    if (all.length) { setCatalog(all); count += all.length; onProgress?.(CATALOG.length); }
+  } catch {}
+  const seen = new Set();
+  for (let page = 1; crawlPages && page <= 40; page++) {
+    await new Promise(r => setTimeout(r, 60));                 // 화면이 멈추지 않게 페이지 사이 쉬기
+    let r = [];
+    try { r = await searchCafe24(keyword, page); } catch { break; }
+    const fresh = r.filter(p => !seen.has(p.no)); fresh.forEach(p => seen.add(p.no));
+    if (!fresh.length) break;
+    setCatalog(fresh); count += fresh.length; onProgress?.(CATALOG.length);
+  }
+  return count;
+}
+
+// 카페24 상품 엑셀(xlsx) / CSV 읽기
+function parseCSV(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ',' || c === '\t') { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+function decodeText(buf) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(buf).replace(/^﻿/, ''); }
+  catch { return new TextDecoder('euc-kr').decode(buf); }            // 카페24 엑셀 CSV는 EUC-KR인 경우가 많음
+}
+let xlsxLib;
+function loadXLSX() {
+  return xlsxLib ||= new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => res(window.XLSX); s.onerror = () => { xlsxLib = null; rej(new Error('xlsx')); };
+    document.head.appendChild(s);
+  });
+}
+async function readProductFile(file) {
+  const buf = await file.arrayBuffer();
+  let rows;
+  if (/\.xlsx?$/i.test(file.name)) {
+    const X = await loadXLSX();
+    const wb = X.read(buf, { type: 'array' });
+    rows = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false, defval: '' });
+  } else rows = parseCSV(decodeText(buf));
+  return rowsToProducts(rows);
+}
+function rowsToProducts(rows) {
+  const clean = (s) => String(s ?? '').replace(/\s+/g, '').toLowerCase();
+  const hi = rows.findIndex(r => r.some(c => /상품번호|product_?no/i.test(clean(c))) && r.some(c => /상품명|product_?name/i.test(clean(c))));
+  if (hi < 0) throw new Error('header');
+  const h = rows[hi].map(clean);
+  const find = (...tests) => { for (const t of tests) { const i = h.findIndex(t); if (i >= 0) return i; } return -1; };
+  const iNo = find(x => x === '상품번호', x => /^product_?no$/.test(x), x => x.includes('상품번호'));
+  const iName = find(x => x === '상품명', x => /^product_?name$/.test(x), x => x.includes('상품명') && !/영문|모델|공급|관리|검색/.test(x));
+  const iPrice = find(x => x === '판매가', x => x.includes('판매가') && !/할인|공급|소비자/.test(x), x => /^price$/.test(x));
+  const iImg = find(x => /이미지.*(목록|리스트|list|작은|small)/.test(x), x => /이미지.*(대표|상세|big|detail)/.test(x), x => x.includes('이미지') || /image/.test(x));
+  const fixImg = (v) => {
+    v = String(v || '').split(/[\s,|]+/)[0];
+    if (!v) return '';
+    if (/^https?:|^\/\//.test(v)) return absUrl(v);
+    if (v.startsWith('/')) return SHOP + v;
+    if (/^product\//.test(v)) return `${SHOP}/web/${v}`;
+    return `${SHOP}/web/product/medium/${v}`;
+  };
+  return rows.slice(hi + 1).map(r => ({
+    no: num(r[iNo]), name: String(r[iName] || '').trim(),
+    price: iPrice >= 0 ? num(r[iPrice]) : 0, image: iImg >= 0 ? fixImg(r[iImg]) : '',
+  })).filter(p => p.no && p.name);
+}
+
+async function searchCafe24(q, page = 1) {
+  const html = await (await fetchT(ORIGIN + API.search(q) + (page > 1 ? `&page=${page}` : ''))).text();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const map = new Map();
+  doc.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    const m = href.match(/product_no=(\d+)/) || href.match(/\/product\/[^/?#]+\/(\d+)(?:\/|$)/);
+    if (!m) return;
+    const no = +m[1];
+    const box = a.closest('li, [id^="anchorBoxId_"], .xans-product-listitem, .prdList > *') || a.parentElement;
+    const e = map.get(no) || { no, name: '', image: '', price: 0 };
+    const img = box?.querySelector('img');
+    if (!e.image && img) e.image = absUrl(img.getAttribute('ec-data-src') || img.getAttribute('data-src') || img.getAttribute('src'));
+    if (!e.name) {
+      const nm = box?.querySelector('.name, .prdName, .description .name, strong.name');
+      e.name = (nm?.textContent || a.textContent || img?.alt || '').replace(/상품명\s*:?/g, '').replace(/\s+/g, ' ').trim();
+    }
+    if (!e.price && box) { const pm = box.textContent.match(/([\d,]{3,})\s*원/); if (pm) e.price = num(pm[1]); }
+    map.set(no, e);
+  });
+  return [...map.values()].filter(p => p.name || p.image);
+}
+
+/* =====================================================================
+   사이드바
+   ===================================================================== */
+function renderTree() {
+  // 룩북 아래에 하위 카테고리를 들여쓰기로 표시 (누르면 그 카테고리 룩만 보기)
+  const subs = (b) => (b.categories || []).length
+    ? `<div class="subcats">${b.categories.map(c => `<button class="subcat ${b.id === cur && adminCat === c.id ? 'on' : ''}" data-book="${esc(b.id)}" data-subcat="${esc(c.id)}"><span>└ ${esc(c.name)}</span><small>${b.looks.filter(l => l.category === c.id).length}룩</small></button>`).join('')}</div>`
+    : '';
+  const item = (b) => `<button class="book ${b.id === cur && (adminCat === 'all' || !(b.categories || []).length) ? 'on' : b.id === cur ? 'on-parent' : ''}" data-book="${esc(b.id)}">
+      <span>${esc(b.title || '(제목 없음)')}${b.hidden ? '<span class="tag">숨김</span>' : ''}${!b.looks.length ? '<span class="tag">준비중</span>' : ''}</span>
+      <small>${b.looks.length}룩</small></button>${subs(b)}`;
+  const specials = D.lookbooks.filter(isSpecial);
+  const seasonal = D.lookbooks.filter(b => !isSpecial(b));
+  const years = [...new Set(seasonal.map(b => b.year))].sort((a, b) => b - a);
+  let html = '';
+  if (specials.length) html += `<p class="yr">스페셜 <span class="hint" style="font-weight:400;letter-spacing:0">· 연도·시즌 무관</span></p>` + specials.map(item).join('');
+  html += years.map(y => `<p class="yr">${y}</p>` + D.seasons.map(s => {
+    const list = seasonal.filter(b => b.year === y && b.season === s.key);
+    return list.length ? `<p class="ss">${esc(s.label)}</p>` + list.map(item).join('') : '';
+  }).join('')).join('');
+  $('#tree').innerHTML = html || '<p class="hint" style="padding:6px">아직 룩북이 없어요.</p>';
+}
+$('#tree').addEventListener('click', e => {
+  const b = e.target.closest('[data-book]'); if (!b) return;
+  cur = b.dataset.book; adminCatBook = cur; adminCat = b.dataset.subcat || 'all';
+  renderTree(); renderMain(); pushPreview();
+});
+
+/* =====================================================================
+   메인 (룩북 편집)
+   ===================================================================== */
+/* 룩북 안 카테고리: 관리자 화면 필터 (전체 / 카테고리별 / 미지정) */
+let adminCat = 'all', adminCatBook = null;
+function catBar(b) {
+  if (!b.categories.length) return `<p class="hint" style="margin:-6px 0 14px">하위 카테고리로 룩을 나누려면 위쪽 룩북 설정의 <b>하위 카테고리</b> 칸에 이름을 넣고 Enter를 누르세요. (예: KISS EDITION 안의 CATEGORY 1, CATEGORY 2)</p>`;
+  const count = (id) => b.looks.filter(l => id === 'all' ? true : id === 'none' ? !l.category : l.category === id).length;
+  const chips = [{ id: 'all', name: '전체' }, ...b.categories, { id: 'none', name: '미지정' }]
+    .filter(c => c.id !== 'none' || count('none'))
+    .map(c => `<button type="button" class="cat-chip ${adminCat === c.id ? 'on' : ''}" data-act="cat-filter" data-cat="${esc(c.id)}">${esc(c.name)} <span>${count(c.id)}</span></button>`).join('');
+  return `<div class="cat-bar">${chips}</div>`;
+}
+function renderMain() {
+  const b = book();
+  if (b && !Array.isArray(b.categories)) b.categories = [];
+  if (b && adminCatBook !== b.id) { adminCat = 'all'; adminCatBook = b.id; }
+  if (b && adminCat !== 'all' && adminCat !== 'none' && !b.categories.some(c => c.id === adminCat)) adminCat = 'all';
+  if (!b) {
+    $('#main').innerHTML = `<div class="empty-main"><h2>편집할 룩북을 선택하세요</h2><p>왼쪽 목록에서 고르거나 <b>+ 새 룩북</b>을 눌러 만드세요.</p></div>`;
+    return;
+  }
+  const g = group(b), pos = g.indexOf(b), sp = isSpecial(b);
+  $('#main').innerHTML = `
+  <section class="panel">
+    <div class="panel-head">
+      <div><h2 id="bTitle">${esc(b.title) || '(제목 없음)'}</h2><p class="hint">사이트 주소: index.html#${esc(b.id)}</p></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm" data-act="book-up" ${pos <= 0 ? 'disabled' : ''}>↑ 탭 앞으로</button>
+        <button class="btn sm" data-act="book-down" ${pos >= g.length - 1 ? 'disabled' : ''}>↓ 탭 뒤로</button>
+        <button class="btn sm danger" data-act="book-del">룩북 삭제</button>
+      </div>
+    </div>
+    <div class="fields">
+      <label class="f"><span>구분</span><select data-bf="type"><option value="season" ${!sp ? 'selected' : ''}>시즌 룩북</option><option value="special" ${sp ? 'selected' : ''}>스페셜 (연도·시즌 없음)</option></select></label>
+      <label class="f"><span>룩북 제목 (영어, 탭·제목에 표시)</span><input type="text" data-bf="title" value="${esc(b.title)}"></label>
+      <label class="f"><span>연도</span><input type="number" data-bf="year" value="${b.year ?? ''}" ${sp ? 'disabled placeholder="—"' : ''}></label>
+      <label class="f"><span>시즌</span><select data-bf="season" ${sp ? 'disabled' : ''}>${sp ? '<option>—</option>' : ''}${D.seasons.map(s => `<option value="${esc(s.key)}" ${!sp && s.key === b.season ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select></label>
+      <label class="f"><span>주소 ID (영문 소문자·숫자·-)</span><input type="text" data-bf="id" value="${esc(b.id)}"></label>
+    </div>
+    <p class="hint" style="margin-top:10px">${sp ? '스페셜 룩북은 연도·시즌 선택과 상관없이 사이트의 룩북 탭 줄 뒤쪽에 항상 보여요. (예: KISS EDITION, 콜라보)' : '선택한 연도·시즌의 탭 줄에 보여요.'}</p>
+    <label class="chk"><input type="checkbox" data-bf="hidden" ${b.hidden ? 'checked' : ''}> 사이트에서 숨기기 <span class="hint">— 미리 만들어 두고 나중에 공개할 때</span></label>
+    <div class="subcat-edit">
+      <span class="sc-lbl">하위 카테고리</span>
+      ${b.categories.map(c => `<span class="sc-chip">${esc(c.name)} <small>${b.looks.filter(l => l.category === c.id).length}</small><button type="button" data-act="sc-del" data-id="${esc(c.id)}" aria-label="${esc(c.name)} 삭제" title="삭제">✕</button></span>`).join('')}
+      <input type="text" class="sc-add" placeholder="+ 하위 카테고리 추가 (입력 후 Enter)" aria-label="하위 카테고리 추가">
+      ${b.categories.length ? '<button type="button" class="btn sm" data-act="cat-manage">이름·순서 편집</button>' : ''}
+    </div>
+    <p class="hint" style="margin-top:6px">사이트에서 룩북 제목 아래 가운데에 <b>ALL · 하위 카테고리…</b>로 나열돼요. 룩마다 카테고리는 아래 룩 카드에서 고르세요.</p>
+  </section>
+
+  <section class="panel" id="looksPanel">
+    <div class="panel-head">
+      <div><h3>룩 ${b.looks.length}개</h3><p class="hint">룩이 0개면 사이트에 "준비중입니다"로 보여요 · <b>이미지를 끌어서</b> 순서를 바꿀 수 있어요 · JPG·PNG는 3:4(세로)로 자동 자르기, GIF는 움직임 그대로(관리자에선 멈춘 그림)</p></div>
+      <button class="btn sm" data-act="cat-manage">하위 카테고리 관리${b.categories.length ? ` (${b.categories.length})` : ''}</button>
+    </div>
+    ${catBar(b)}
+    <div class="look-grid" id="lookGrid">
+      ${b.looks.map((l, i) => [l, i]).filter(([l]) => adminCat === 'all' || (adminCat === 'none' ? !l.category : l.category === adminCat)).map(([l, i]) => lookCard(l, i, b.looks.length, b)).join('')}
+      <label class="drop" id="drop"><b>+</b><strong>이미지 추가</strong><span class="hint">JPG · PNG · GIF<br>여러 장 한 번에 끌어다 놓기 가능</span><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple data-act="add-images"></label>
+    </div>
+  </section>`;
+  autofillNames(b.looks.flatMap(l => l.products));
+}
+
+function productRows(l) {
+  if (!l.products.length) return '<p class="warn">연결된 상품이 없어요</p>';
+  return l.products.map((n, j) => {
+    const info = D._pinfo[n] || {}, name = D.products[n] || info.name;
+    return `<div class="pitem" data-p="${j}">
+      <div class="pt" ${info.image ? `style="background-image:url('${esc(info.image)}')"` : ''}></div>
+      <div><div class="pn">${esc(name || `상품번호 ${n}`)}</div>
+        <div class="pm ${name ? '' : 'miss'}">#${n}${info.price ? ' · ' + won(info.price) : ''}${name ? '' : (tried.has(n) && !inflight[n] ? ' · 정보 없음' : ' · 불러오는 중…')}</div></div>
+      <div style="display:flex;align-items:center;gap:2px">
+        <div class="px"><button type="button" data-act="p-up" ${j === 0 ? 'disabled' : ''} aria-label="위로">▲</button><button type="button" data-act="p-down" ${j === l.products.length - 1 ? 'disabled' : ''} aria-label="아래로">▼</button></div>
+        <button type="button" class="btn sm icon" data-act="p-del" aria-label="상품 빼기" title="빼기">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function refreshProductLists() {
+  const b = book(); if (!b) return;
+  $$('.lcard').forEach(c => { const l = b.looks[+c.dataset.i]; const el = $('.plist', c); if (l && el) el.innerHTML = productRows(l); });
+}
+function lookCard(l, i, total, b) {
+  const gif = /\.gif($|\?)/i.test(l._file || l.image || '');
+  // 관리자 화면에선 GIF를 멈춘 첫 장면으로, 영상은 자동재생 없이 → 카드가 많아도 가볍게
+  const src = l._img ? (lookImg(l).poster || lookImg(l).url) : (gif ? gifPoster(l.image) : l.image);
+  const pk = l._img ? lookImg(l).key : (gif ? 'p:' + l.image : '');
+  const catSel = b && b.categories.length
+    ? `<label class="f"><span>하위 카테고리</span><select data-lf="category"><option value="">미지정</option>${b.categories.map(c => `<option value="${esc(c.id)}" ${l.category === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>`
+    : '';
+  return `<div class="lcard" data-i="${i}">
+    <div class="lthumb" draggable="true" data-drag title="끌어서 순서 바꾸기">
+      ${l.video ? `<video src="${esc(l.video)}" ${src ? `poster="${esc(src)}"` : ''} muted playsinline preload="metadata"></video>` : src ? `<img src="${esc(src)}" alt="" draggable="false" ${pk ? `data-pk="${esc(pk)}"` : ''} onerror="this.style.opacity=.15">` : ''}
+      <span class="no">LOOK ${i + 1}</span>
+      <span class="badges">${gif ? '<span class="gif">GIF</span>' : ''}${l.video ? '<span class="vid">영상</span>' : ''}${l._img ? '<span>새 이미지</span>' : ''}</span>
+      <span class="handle">↔ 끌어서 순서 변경</span>
+    </div>
+    <div class="lbody">
+      ${catSel}
+      <div class="plist">${productRows(l)}</div>
+      <div class="psearch">
+        <input type="search" class="ps-in" placeholder="상품명·번호·주소로 검색해서 추가" autocomplete="off" spellcheck="false" aria-label="LOOK ${i + 1} 상품 검색">
+        <div class="ps-drop" hidden></div>
+      </div>
+      <details ${l.video ? 'open' : ''}><summary>영상 썸네일 (선택)</summary><input type="url" data-lf="video" placeholder="https://…/look.mp4 (외부 서버 주소)" value="${esc(l.video || '')}"></details>
+      <div class="lact">
+        <button class="btn sm icon" data-act="look-left" ${i === 0 ? 'disabled' : ''} title="앞으로">←</button>
+        <button class="btn sm icon" data-act="look-right" ${i === total - 1 ? 'disabled' : ''} title="뒤로">→</button>
+        <label class="btn sm grow">이미지 교체<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-act="replace-image" hidden></label>
+        <button class="btn sm danger" data-act="look-del">삭제</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* 필드 입력 */
+$('#main').addEventListener('input', e => {
+  const b = book(); if (!b) return;
+  const bf = e.target.dataset.bf;
+  if (bf === 'title') { b.title = e.target.value; $('#bTitle').textContent = b.title || '(제목 없음)'; changed(); }
+});
+$('#main').addEventListener('change', async e => {
+  const b = book(); if (!b) return;
+  const t = e.target, bf = t.dataset.bf, lf = t.dataset.lf;
+  if (bf === 'type') {
+    if (t.value === 'special') { b.type = 'special'; delete b.year; delete b.season; }
+    else { b.type = 'season'; b.year = new Date().getFullYear(); b.season = D.seasons[0]?.key; }
+    changed({ main: true });
+  }
+  if (bf === 'season') { b.season = t.value; changed({ main: true }); }
+  if (bf === 'hidden') { if (t.checked) b.hidden = true; else delete b.hidden; changed(); }
+  if (bf === 'year') { if (!/^\d{4}$/.test(t.value)) { t.value = b.year; toast('연도는 4자리 숫자로 입력하세요'); } else { b.year = +t.value; changed({ main: true }); } }
+  if (bf === 'id') {
+    const v = slug(t.value);
+    if (!v) { t.value = b.id; return toast('주소 ID를 입력하세요'); }
+    if (v !== b.id && D.lookbooks.some(x => x.id === v)) { t.value = b.id; return toast('이미 있는 주소 ID예요'); }
+    b.id = cur = v; changed({ main: true });
+  }
+  const card = t.closest('.lcard');
+  if (card && lf === 'category') { const l = b.looks[+card.dataset.i]; if (t.value) l.category = t.value; else delete l.category; changed({ main: true }); }
+  if (card && lf === 'video') { const l = b.looks[+card.dataset.i]; if (t.value.trim()) l.video = t.value.trim(); else delete l.video; changed({ main: true }); }
+  if (t.dataset.act === 'add-images') { await addImages([...t.files]); t.value = ''; }
+  if (t.dataset.act === 'replace-image' && t.files[0]) {
+    const l = b.looks[+card.dataset.i];
+    try { const r = await processImage(t.files[0]); l._img = r.dataUrl; l._file = newFileName(r.ext); changed({ main: true }); toast('이미지를 바꿨어요'); }
+    catch { toast('이미지를 읽지 못했어요'); }
+  }
+});
+const slug = (s) => String(s).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+function parseProducts(text) {
+  const out = [];
+  String(text).split(/[\s,]+/).forEach(tok => {
+    const m = tok.match(/product_no=(\d+)/) || tok.match(/\/product\/[^/?#]+\/(\d+)(?:\/|$)/) || tok.match(/^#?(\d{1,7})$/);
+    if (m && !out.includes(+m[1])) out.push(+m[1]);
+  });
+  return out;
+}
+
+/* 버튼 */
+$('#main').addEventListener('click', e => {
+  const b = book(); if (!b) return;
+  const btn = e.target.closest('[data-act]'); if (!btn) return;
+  const act = btn.dataset.act;
+  const card = btn.closest('.lcard'), i = card ? +card.dataset.i : -1, l = b.looks[i];
+  if (act === 'book-del') {
+    if (!confirm(`'${b.title}' 룩북을 삭제할까요?\n(내보내기 전까지는 사이트에 영향 없음)`)) return;
+    D.lookbooks.splice(D.lookbooks.indexOf(b), 1); cur = D.lookbooks[0]?.id || null; changed({ main: true });
+  }
+  if (act === 'book-up' || act === 'book-down') {
+    const g = group(b), other = g[g.indexOf(b) + (act === 'book-up' ? -1 : 1)]; if (!other) return;
+    const x = D.lookbooks.indexOf(b), y = D.lookbooks.indexOf(other);
+    [D.lookbooks[x], D.lookbooks[y]] = [D.lookbooks[y], D.lookbooks[x]]; changed({ main: true });
+  }
+  if (act === 'look-del') { if (!confirm(`LOOK ${i + 1}을 삭제할까요?`)) return; b.looks.splice(i, 1); changed({ main: true }); }
+  if (act === 'look-left' || act === 'look-right') moveLook(i, i + (act === 'look-left' ? -1 : 1));
+  if (act === 'cat-filter') { adminCat = btn.dataset.cat; renderTree(); renderMain(); return; }
+  if (act === 'cat-manage') { openCategories(); return; }
+  if (act === 'sc-del') {
+    const c = b.categories.find(x => x.id === btn.dataset.id); if (!c) return;
+    const n = b.looks.filter(l => l.category === c.id).length;
+    if (n && !confirm(`'${c.name}' 하위 카테고리를 삭제할까요?\n이 카테고리의 룩 ${n}개는 '미지정'이 돼요. (룩은 지워지지 않아요)`)) return;
+    b.looks.forEach(l => { if (l.category === c.id) delete l.category; });
+    b.categories = b.categories.filter(x => x !== c);
+    if (adminCat === c.id) adminCat = 'all';
+    changed({ main: true }); return;
+  }
+  if (act === 'p-del' || act === 'p-up' || act === 'p-down') {
+    const j = +btn.closest('.pitem').dataset.p;
+    if (act === 'p-del') l.products.splice(j, 1);
+    else { const k = j + (act === 'p-up' ? -1 : 1); [l.products[j], l.products[k]] = [l.products[k], l.products[j]]; }
+    changed({ tree: false }); refreshProductLists();
+  }
+});
+function moveLook(from, to) {
+  const b = book(); if (!b || to < 0 || to >= b.looks.length || from === to) return;
+  const [m] = b.looks.splice(from, 1); b.looks.splice(to, 0, m); changed({ main: true });
+}
+
+/* 드래그: 이미지(썸네일)를 끌어서 순서 변경 / 바깥 파일은 드롭하면 추가 */
+let dragFrom = null;
+const clearOver = () => $$('.over-l,.over-r,.over').forEach(x => x.classList.remove('over-l', 'over-r', 'over'));
+$('#main').addEventListener('dragstart', e => {
+  const h = e.target.closest('[data-drag]'); if (!h) return;
+  const c = h.closest('.lcard'); dragFrom = +c.dataset.i;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', 'look:' + dragFrom);
+  try { e.dataTransfer.setDragImage(h, h.offsetWidth / 2, 40); } catch {}
+  requestAnimationFrame(() => c.classList.add('dragging'));
+});
+$('#main').addEventListener('dragend', () => { dragFrom = null; clearOver(); $$('.dragging').forEach(x => x.classList.remove('dragging')); });
+$('#main').addEventListener('dragover', e => {
+  if (dragFrom !== null) {
+    const c = e.target.closest('.lcard'); if (!c) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move'; clearOver();
+    const r = c.getBoundingClientRect(); c.classList.add(e.clientX < r.left + r.width / 2 ? 'over-l' : 'over-r');
+    return;
+  }
+  if (e.dataTransfer.types.includes('Files') && e.target.closest('#looksPanel')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; clearOver(); $('#drop')?.classList.add('over'); }
+});
+$('#main').addEventListener('dragleave', e => { if (!e.relatedTarget || !$('#main').contains(e.relatedTarget)) clearOver(); });
+$('#main').addEventListener('drop', async e => {
+  e.preventDefault();
+  if (dragFrom !== null) {                                   // 카드 순서 변경 (복사 아님)
+    const c = e.target.closest('.lcard'); const from = dragFrom; dragFrom = null; clearOver();
+    if (!c) return;
+    let to = +c.dataset.i; const r = c.getBoundingClientRect();
+    if (e.clientX >= r.left + r.width / 2) to += 1;
+    if (from < to) to -= 1;
+    moveLook(from, to); return;
+  }
+  clearOver();
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+  if (files.length) await addImages(files);
+});
+
+/* 이미지 처리 */
+const newFileName = (ext = 'jpg') => `look-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.${ext}`;
+const readDataUrl = (file) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+async function processImage(file) {
+  if (file.type === 'image/gif') {                         // GIF: 움직임 유지를 위해 원본 그대로 (사이트에서 2:3으로 맞춰 보임)
+    if (file.size > GIF_WARN_MB * 1024 * 1024) toast(`GIF 용량이 ${(file.size / 1048576).toFixed(1)}MB예요. 페이지가 느려질 수 있어요`);
+    return { dataUrl: await readDataUrl(file), ext: 'gif' };
+  }
+  const bmp = await createImageBitmap(file);
+  const R = THUMB_RATIO;
+  let sw = bmp.width, sh = bmp.height, sx = 0, sy = 0;
+  if (sw / sh > R) { sw = Math.round(sh * R); sx = Math.round((bmp.width - sw) / 2); }
+  else { sh = Math.round(sw / R); sy = Math.round((bmp.height - sh) / 2); }
+  const W = Math.min(IMG_MAX_W, sw), H = Math.round(W / R);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, W, H);
+  return { dataUrl: cv.toDataURL('image/jpeg', 0.86), ext: 'jpg' };
+}
+async function addImages(files) {
+  const b = book(); if (!b || !files.length) return;
+  toast(`이미지 ${files.length}장 처리 중…`);
+  let n = 0;
+  for (const f of files) {
+    try {
+      const r = await processImage(f);
+      const look = { image: '', _img: r.dataUrl, _file: newFileName(r.ext), products: [] };
+      if (adminCat !== 'all' && adminCat !== 'none' && b.categories.some(c => c.id === adminCat)) look.category = adminCat;   // 카테고리 필터 중이면 그 카테고리로
+      b.looks.push(look); n++;
+    }
+    catch { toast(`${f.name}을(를) 읽지 못했어요`); }
+  }
+  changed({ main: true });
+  if (n) toast(`룩 ${n}개를 추가했어요 · 카드의 검색창에서 상품을 연결하세요`);
+}
+
+/* =====================================================================
+   다이얼로그
+   ===================================================================== */
+function openDialog(title, body, foot, onBind, wide) {
+  const d = $('#dlg');
+  d.className = wide ? 'wide' : '';
+  d.innerHTML = `<div class="dlg-head"><h3>${title}</h3><button class="btn sm icon" data-x aria-label="닫기">✕</button></div>
+    <div class="dlg-body">${body}</div><div class="dlg-foot">${foot}</div>`;
+  d.querySelectorAll('[data-x]').forEach(x => x.onclick = () => d.close());
+  d.onclose = null;
+  onBind?.(d);
+  d.showModal();
+}
+
+/* =====================================================================
+   룩 카드 안 상품 검색 (입력하면 바로 목록이 뜸 · ↑↓ 선택 · Enter 추가)
+   ===================================================================== */
+const ps = { items: [], idx: -1, seq: 0, timer: null, remoteState: '' };
+const isDirectQuery = (q) => { const t = q.trim().split(/[\s,]+/).filter(Boolean); return t.length > 0 && t.every(x => /^#?\d{2,7}$/.test(x) || /product/.test(x)); };
+function psLook(input) { const b = book(); const c = input.closest('.lcard'); return b && c ? b.looks[+c.dataset.i] : null; }
+function psMark(name, q) {
+  let h = esc(name);
+  q.trim().split(/\s+/).filter(t => t && !isChoOnly(t)).sort((a, b) => b.length - a.length).forEach(t => {
+    const re = new RegExp(esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    h = h.replace(re, m => `<mark>${m}</mark>`);
+  });
+  return h;
+}
+function psRender(input) {
+  const drop = input.nextElementSibling, l = psLook(input), q = input.value.trim();
+  if (!q || !l) { drop.hidden = true; return; }
+  let html = '';
+  if (!CATALOG.length && !isDirectQuery(q)) html += `<div class="ps-msg">상품 목록을 아직 안 불러왔어요. 한 번 불러오면 상품명으로 바로 찾을 수 있어요.<br><button type="button" class="btn sm" data-act="open-catalog" style="margin-top:6px">상품 목록 불러오기</button></div>`;
+  html += ps.items.map((p, k) => {
+    const added = l.products.includes(p.no);
+    return `<div class="ps-opt ${k === ps.idx ? 'on' : ''} ${added ? 'added' : ''}" data-k="${k}">
+      <div class="st" ${p.image ? `style="background-image:url('${esc(p.image)}')"` : ''}></div>
+      <div><div class="sn">${psMark(p.name || `상품번호 ${p.no}`, q)}</div><div class="sm">#${p.no}${p.price ? ' · ' + won(p.price) : ''}</div></div>
+      <span class="ps-tag">${added ? '추가됨' : '추가'}</span></div>`;
+  }).join('');
+  if (ps.remoteState === 'loading') html += `<div class="ps-msg"><span class="spin"></span>사이트에서 더 찾는 중…</div>`;
+  else if (!ps.items.length && CATALOG.length) html += `<div class="ps-msg">'${esc(q)}'에 맞는 상품이 없어요.<br>단어를 줄이거나(예: "티셔츠 블랙" → "블랙"), 초성(ㅋㄹㅇㅍ)·상품번호로 찾아보세요.${ps.remoteState === 'fail' && location.protocol === 'file:' ? '<br>목록에 없는 새 상품이면 [상품 목록]에서 다시 불러오세요.' : ''}</div>`;
+  if (ps.items.length > 1 && isDirectQuery(q)) html += `<div class="ps-msg">Enter를 누르면 ${ps.items.length}개를 한 번에 추가해요</div>`;
+  drop.innerHTML = html; drop.hidden = !html;
+  drop.querySelector('.ps-opt.on')?.scrollIntoView({ block: 'nearest' });
+}
+function psQuery(input) {
+  const q = input.value.trim(), my = ++ps.seq;
+  clearTimeout(ps.timer); ps.remoteState = ''; ps.idx = 0;
+  if (!q) { ps.items = []; psRender(input); return; }
+  if (isDirectQuery(q)) {
+    ps.items = parseProducts(q).map(no => { const c = catInfo(no) || {}, i = D._pinfo[no] || {}; return { no, name: c.name || D.products[no] || i.name || '', image: c.image || i.image, price: c.price || i.price }; });
+    psRender(input);
+    ps.items.filter(p => !p.name).forEach(p => fetchInfo(p.no).then(ok => { if (ok && my === ps.seq) { psQuery(input); } }));
+    return;
+  }
+  ps.items = searchLocal(q, 12);
+  if (ps.items.length < 3 && q.length >= 2) {
+    ps.remoteState = 'loading';
+    ps.timer = setTimeout(async () => {
+      try { await searchRemote(q); } catch {}
+      if (my !== ps.seq) return;
+      ps.items = searchLocal(q, 12); ps.remoteState = ps.items.length ? '' : 'fail'; psRender(input);
+    }, 450);
+  }
+  psRender(input);
+}
+function psAdd(input, p) {
+  const l = psLook(input); if (!l || !p) return;
+  if (l.products.includes(p.no)) { toast('이미 추가된 상품이에요'); return; }
+  l.products.push(p.no);
+  if (p.name) { D.products[p.no] ||= p.name; D._pinfo[p.no] = { ...(D._pinfo[p.no] || {}), name: p.name, image: p.image, price: p.price }; }
+  else fetchInfo(p.no).then(() => refreshProductLists());
+  changed({ tree: false }); refreshProductLists(); psRender(input);
+}
+$('#main').addEventListener('input', e => { if (e.target.classList.contains('ps-in')) psQuery(e.target); });
+$('#main').addEventListener('focusin', e => { if (e.target.classList.contains('ps-in') && e.target.value.trim()) psQuery(e.target); });
+$('#main').addEventListener('focusout', e => {
+  if (!e.target.classList.contains('ps-in')) return;
+  const drop = e.target.nextElementSibling;
+  setTimeout(() => { if (!drop.contains(document.activeElement)) drop.hidden = true; }, 180);
+});
+// 룩북 설정의 "하위 카테고리 추가" 칸: Enter로 바로 추가
+$('#main').addEventListener('keydown', e => {
+  if (!e.target.classList?.contains('sc-add') || e.key !== 'Enter' || e.isComposing) return;
+  e.preventDefault();
+  const b = book(), name = e.target.value.trim(); if (!b || !name) return;
+  if (b.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) { toast('이미 있는 하위 카테고리예요'); return; }
+  b.categories.push({ id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name });
+  changed({ main: true }); toast(`'${name}' 하위 카테고리를 추가했어요 · 룩 카드에서 골라 주세요`);
+  setTimeout(() => $('#main .sc-add')?.focus(), 0);
+});
+$('#main').addEventListener('keydown', e => {
+  const input = e.target; if (!input.classList?.contains('ps-in')) return;
+  const n = ps.items.length;
+  if (e.key === 'ArrowDown' && n) { e.preventDefault(); ps.idx = (ps.idx + 1) % n; psRender(input); }
+  else if (e.key === 'ArrowUp' && n) { e.preventDefault(); ps.idx = (ps.idx - 1 + n) % n; psRender(input); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (isDirectQuery(input.value)) { ps.items.forEach(p => psAdd(input, p)); input.value = ''; psQuery(input); }
+    else if (n) { psAdd(input, ps.items[Math.max(0, ps.idx)]); input.select(); }
+  }
+  else if (e.key === 'Escape') { input.nextElementSibling.hidden = true; }
+});
+$('#main').addEventListener('mousedown', e => {
+  const opt = e.target.closest('.ps-opt'); if (!opt) return;
+  e.preventDefault();                                      // 입력창 포커스 유지 → 연달아 추가 가능
+  const input = opt.closest('.psearch').querySelector('.ps-in');
+  psAdd(input, ps.items[+opt.dataset.k]);
+});
+$('#main').addEventListener('click', e => { if (e.target.closest('[data-act="open-catalog"]')) openCatalog(); });
+
+/* 새 룩북 */
+$('#btnAddBook').onclick = () => {
+  const y = new Date().getFullYear();
+  openDialog('새 룩북', `<div class="stack">
+      <div><div class="seg" id="nbType"><button class="on" data-t="season">시즌 룩북</button><button data-t="special">스페셜 (연도·시즌 없음)</button></div>
+        <p class="hint" id="nbTypeHint" style="margin-top:8px">연도·시즌 선택에 따라 탭에 보여요.</p></div>
+      <label class="f"><span>룩북 제목 (영어)</span><input type="text" id="nbTitle" placeholder="예: 2027 SPRING/SUMMER"></label>
+      <div class="row" id="nbYS" style="grid-template-columns:1fr 1.4fr">
+        <label class="f"><span>연도</span><input type="number" id="nbYear" value="${y}"></label>
+        <label class="f"><span>시즌</span><select id="nbSeason">${D.seasons.map(s => `<option value="${esc(s.key)}">${esc(s.label)}</option>`).join('')}</select></label>
+      </div>
+      <label class="f"><span>주소 ID (비우면 제목으로 자동)</span><input type="text" id="nbId" placeholder="예: 2027-spring-summer"></label>
+    </div>`,
+    `<button class="btn" data-x>취소</button><button class="btn primary" id="nbOk">만들기</button>`,
+    d => {
+      let type = 'season';
+      $('#nbType', d).onclick = e => {
+        const bt = e.target.closest('[data-t]'); if (!bt) return; type = bt.dataset.t;
+        $$('#nbType button', d).forEach(x => x.classList.toggle('on', x === bt));
+        $('#nbYS', d).style.display = type === 'special' ? 'none' : '';
+        $('#nbTitle', d).placeholder = type === 'special' ? '예: KISS EDITION' : '예: 2027 SPRING/SUMMER';
+        $('#nbTypeHint', d).textContent = type === 'special' ? '연도·시즌과 상관없이 탭 줄 뒤쪽에 항상 보여요. (콜라보·에디션 등)' : '연도·시즌 선택에 따라 탭에 보여요.';
+      };
+      $('#nbOk', d).onclick = () => {
+        const title = $('#nbTitle', d).value.trim(); const year = +$('#nbYear', d).value;
+        if (!title) return toast('제목을 입력하세요');
+        if (type === 'season' && !/^\d{4}$/.test(String(year))) return toast('연도는 4자리 숫자로 입력하세요');
+        let id = slug($('#nbId', d).value || title) || `lookbook-${Date.now().toString(36)}`;
+        if (type === 'season' && !/^\d{4}/.test(id)) id = `${year}-${id}`;
+        const base = id; let n = 2; while (D.lookbooks.some(b => b.id === id)) id = `${base}-${n++}`;
+        const nb = type === 'special' ? { id, type: 'special', title, looks: [], categories: [] } : { id, type: 'season', year, season: $('#nbSeason', d).value, title, looks: [], categories: [] };
+        D.lookbooks.unshift(nb);
+        cur = id; d.close(); changed({ main: true }); toast('룩북을 만들었어요');
+      };
+    });
+  setTimeout(() => $('#nbTitle')?.focus(), 50);
+};
+
+/* 시즌 관리 */
+$('#btnSeasons').onclick = () => {
+  const used = (k) => D.lookbooks.filter(b => !isSpecial(b) && b.season === k).length;
+  const rows = () => D.seasons.map((s, i) => `<tr><td>${esc(s.key)}</td><td><input type="text" data-sl="${i}" value="${esc(s.label)}"></td>
+      <td style="width:150px;text-align:right;white-space:nowrap">
+        <button class="btn sm icon" data-mv="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="btn sm icon" data-mv="${i}" data-dir="1" ${i === D.seasons.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="btn sm danger" data-del="${i}" ${used(s.key) ? `disabled title="룩북 ${used(s.key)}개가 사용 중"` : ''}>삭제</button></td></tr>`).join('');
+  openDialog('시즌 관리', `
+    <p class="hint" style="margin-bottom:10px">사이트의 시즌 선택 드롭다운에 이 순서로 보여요. 룩북이 쓰는 시즌은 삭제할 수 없어요.<br>연도·시즌이 없는 룩북(콜라보 등)은 시즌 대신 <b>새 룩북 → 스페셜</b>로 만드세요.</p>
+    <table class="tbl"><tbody id="sRows">${rows()}</tbody></table>
+    <div class="row" style="grid-template-columns:110px 1fr auto;margin-top:16px">
+      <input type="text" id="sKey" placeholder="코드 (예: HOL)">
+      <input type="text" id="sLabel" placeholder="표시 이름 (예: HOLIDAY)">
+      <button class="btn" id="sAdd">추가</button>
+    </div>`, `<button class="btn primary" data-x>완료</button>`, d => {
+    const re = () => { $('#sRows', d).innerHTML = rows(); };
+    d.addEventListener('input', e => { const i = e.target.dataset.sl; if (i != null) { D.seasons[+i].label = e.target.value; changed(); } });
+    d.addEventListener('click', e => {
+      const mv = e.target.dataset.mv, del = e.target.dataset.del;
+      if (mv != null) { const i = +mv, j = i + +e.target.dataset.dir; [D.seasons[i], D.seasons[j]] = [D.seasons[j], D.seasons[i]]; re(); changed(); }
+      if (del != null) { D.seasons.splice(+del, 1); re(); changed(); }
+    });
+    $('#sAdd', d).onclick = () => {
+      const key = $('#sKey', d).value.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); const label = $('#sLabel', d).value.trim();
+      if (!key || !label) return toast('코드와 이름을 입력하세요');
+      if (D.seasons.some(s => s.key === key)) return toast('이미 있는 코드예요');
+      D.seasons.push({ key, label }); $('#sKey', d).value = $('#sLabel', d).value = ''; re(); changed();
+    };
+    d.onclose = () => renderMain();
+  });
+};
+
+/* 상품 목록 (검색용 카탈로그 불러오기 + 룩에 쓰인 상품명 관리) */
+function updateCatalogBtn() { $('#btnNames').textContent = CATALOG.length ? `상품 목록 (${CATALOG.length.toLocaleString()})` : '상품 목록'; }
+const fmtAt = (t) => t ? new Date(t).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+function openCatalog() {
+  const used = new Set(D.lookbooks.flatMap(b => b.looks.flatMap(l => l.products)));
+  const nos = [...new Set([...used, ...Object.keys(D.products).map(Number)])].sort((a, b) => a - b);
+  const offline = location.protocol === 'file:';
+  const status = () => CATALOG.length ? `<b>${CATALOG.length.toLocaleString()}개</b> 상품을 불러왔어요 · ${fmtAt(catalogAt)} 업데이트` : '아직 불러온 상품이 없어요';
+  const rows = () => nos.map(n => `<tr><td>#${n}</td><td><input type="text" data-pn="${n}" value="${esc(D.products[n] || '')}" placeholder="비어 있으면 [자동 채우기]"></td>
+      <td style="width:${used.has(n) ? 70 : 124}px;text-align:right;white-space:nowrap"><a class="btn sm" href="${SHOP}${API.page(n)}" target="_blank" rel="noopener">보기</a>
+      ${used.has(n) ? '' : `<button class="btn sm danger" data-pdel="${n}">삭제</button>`}</td></tr>`).join('') || '<tr><td colspan="3" class="hint">연결된 상품이 없어요</td></tr>';
+  openDialog('상품 목록', `
+    <div class="stack">
+      <div class="cat-status" id="catStatus">${status()}</div>
+      <p class="hint">한 번 불러오면 룩 카드의 검색창에서 상품명으로 바로 찾을 수 있어요. 새 상품이 생기면 다시 불러오세요.</p>
+
+      <section class="cat-box">
+        <h4>① 카페24 상품 엑셀로 불러오기 <span class="tag">추천 · 어디서 열어도 됨</span></h4>
+        <ol class="cat-steps">
+          <li>카페24 관리자 → <b>상품 → 상품 목록</b> → 전체 상품 선택 → <b>엑셀 다운로드</b></li>
+          <li>항목에 <b>상품번호 · 상품명 · 판매가</b>(가능하면 <b>이미지</b>)가 들어가게 받기</li>
+          <li>받은 파일(xlsx·csv)을 아래에 끌어다 놓기</li>
+        </ol>
+        <label class="cat-drop" id="catDrop"><input type="file" id="catFile" accept=".csv,.xlsx,.xls,.txt" hidden><b>파일 선택</b> 또는 여기로 끌어다 놓기</label>
+      </section>
+
+      <section class="cat-box">
+        <h4>② 사이트에서 불러오기 ${offline ? '<span class="tag">카페24에 올린 관리자에서만</span>' : ''}</h4>
+        <p class="hint" style="margin-bottom:8px">상품 API와 사이트 검색 결과를 모아요. 아래 단어가 들어간 상품을 모두 가져와요.</p>
+        <div class="row" style="grid-template-columns:1fr auto"><input type="text" id="catKw" value="빅터" placeholder="검색어 (예: 빅터)"><button class="btn" id="catSync">사이트에서 불러오기</button></div>
+      </section>
+
+      <details class="cat-names"><summary>룩에 쓰인 상품명 수정 (${nos.length})</summary>
+        <p class="hint" style="margin:8px 0">사이트에서는 상품 API로 실제 이름·가격·사진을 보여주고, 여기 이름은 API가 안 될 때 대신 보여요.</p>
+        <table class="tbl"><tbody id="pRows">${rows()}</tbody></table>
+        <button class="btn sm" id="pFill" style="margin-top:10px">비어 있는 이름 자동 채우기</button>
+      </details>
+    </div>`,
+    `${CATALOG.length ? '<button class="btn danger" id="catClear">불러온 목록 비우기</button>' : ''}<span class="grow"></span><button class="btn primary" data-x>완료</button>`, d => {
+      const refresh = () => { $('#catStatus', d).innerHTML = status(); updateCatalogBtn(); };
+      const importFile = async (file) => {
+        if (!file) return;
+        $('#catStatus', d).innerHTML = '<span class="spin"></span>파일 읽는 중…';
+        try {
+          const list = await readProductFile(file);
+          if (!list.length) throw new Error('empty');
+          setCatalog(list); refresh(); autofillAll(); toast(`${list.length.toLocaleString()}개 상품을 불러왔어요`);
+        } catch (err) {
+          $('#catStatus', d).innerHTML = err.message === 'xlsx'
+            ? '엑셀 파일을 여는 도구를 불러오지 못했어요. 인터넷 연결을 확인하거나 CSV로 받아서 넣어 주세요.'
+            : '이 파일에서 <b>상품번호·상품명</b> 열을 찾지 못했어요. 엑셀 다운로드 항목에 두 열이 들어 있는지 확인해 주세요.';
+        }
+      };
+      $('#catFile', d).onchange = e => importFile(e.target.files[0]);
+      const drop = $('#catDrop', d);
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+      drop.addEventListener('dragleave', () => drop.classList.toggle('over', false));
+      drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.toggle('over', false); importFile(e.dataTransfer.files[0]); });
+      $('#catSync', d).onclick = async () => {
+        const kw = $('#catKw', d).value.trim() || '빅터';
+        const btn = $('#catSync', d); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>불러오는 중…';
+        const before = CATALOG.length;
+        try { await syncFromSite(kw, n => { $('#catStatus', d).innerHTML = `<span class="spin"></span>${n.toLocaleString()}개 모으는 중…`; }); } catch {}
+        btn.disabled = false; btn.textContent = '사이트에서 불러오기'; refresh();
+        if (CATALOG.length > before) { autofillAll(); toast(`${(CATALOG.length - before).toLocaleString()}개 상품을 새로 불러왔어요`); }
+        else toast(offline ? '내 컴퓨터에서 연 관리자라 사이트에 접속하지 못했어요. ①엑셀로 불러오거나, 카페24에 올린 admin.html에서 해 주세요' : '새로 불러온 상품이 없어요. 검색어를 바꾸거나 ①엑셀로 불러와 주세요');
+      };
+      $('#catClear', d)?.addEventListener('click', () => {
+        if (!confirm('불러온 상품 목록을 비울까요? (룩에 연결된 상품은 그대로예요)')) return;
+        CATALOG = []; catalogAt = 0; idb.del('catalog').catch(() => {}); refresh(); d.close();
+      });
+      d.addEventListener('input', e => { const n = e.target.dataset.pn; if (n) { D.products[n] = e.target.value; changed({ tree: false }); } });
+      d.addEventListener('click', e => { const n = e.target.dataset.pdel; if (n) { delete D.products[n]; e.target.closest('tr').remove(); changed({ tree: false }); } });
+      $('#pFill', d).onclick = async () => {
+        const todo = nos.filter(n => !D.products[n]);
+        if (!todo.length) return toast('비어 있는 상품명이 없어요');
+        $('#pFill', d).disabled = true; $('#pFill', d).innerHTML = '<span class="spin"></span>불러오는 중…';
+        todo.forEach(n => { delete inflight[n]; });
+        const rs = await Promise.all(todo.map(fetchInfo));
+        $('#pRows', d).innerHTML = rows(); $('#pFill', d).disabled = false; $('#pFill', d).textContent = '비어 있는 이름 자동 채우기';
+        const ok = rs.filter(Boolean).length;
+        toast(ok ? `${ok}개 상품명을 채웠어요` : (location.protocol === 'file:' ? '사이트에 접속하지 못했어요. admin.html을 카페24에 올려서 열면 동작해요' : '상품 정보를 불러오지 못했어요'));
+        if (ok) changed({ tree: false });
+      };
+      d.onclose = () => renderMain();
+    }, true);
+}
+$('#btnNames').onclick = openCatalog;
+// 목록을 새로 불러오면 룩에 쓰인 상품의 이름·사진도 채움
+function autofillAll() {
+  let n = 0;
+  D.lookbooks.forEach(b => b.looks.forEach(l => l.products.forEach(no => {
+    const c = catInfo(no); if (!c) return;
+    D._pinfo[no] = { ...(D._pinfo[no] || {}), name: c.name, image: c.image || D._pinfo[no]?.image, price: c.price || D._pinfo[no]?.price };
+    if (!D.products[no]) { D.products[no] = c.name; n++; }
+  })));
+  if (n) changed({ tree: false });
+  refreshProductLists();
+}
+
+/* 디자인 */
+$('#btnDesign').onclick = () => {
+  openDialog('디자인', `<div class="stack">
+    <div class="sample" id="dSample" style="--sr:${D.design.radius}px"><div class="t"></div><div class="s">옵션 선택</div><div class="b">장바구니</div></div>
+    <label class="f"><span>모서리 둥글기: <b id="dVal">${D.design.radius}px</b> (상품 썸네일·옵션 선택·장바구니 버튼·로그인 안내)</span>
+      <input type="range" id="dRadius" min="0" max="24" step="1" value="${D.design.radius}"></label>
+    <label class="chk" style="margin:0"><input type="checkbox" id="dLooks" ${D.design.roundLooks ? 'checked' : ''}> 룩 썸네일(검정 테두리)에도 둥글기 적용</label>
+    <label class="f" style="margin-top:6px"><span>콘텐츠 최대 폭: <b id="dWVal">${D.design.maxWidth}px</b> — 화면이 이보다 넓으면 양옆이 여백으로 남아요 (기본 1200px)</span>
+      <input type="range" id="dWidth" min="960" max="1920" step="20" value="${D.design.maxWidth}"></label>
+  </div>`, `<button class="btn primary" data-x>완료</button>`, d => {
+    $('#dRadius', d).oninput = e => { D.design.radius = +e.target.value; $('#dVal', d).textContent = `${D.design.radius}px`; $('#dSample', d).style.setProperty('--sr', `${D.design.radius}px`); changed({ tree: false }); };
+    $('#dLooks', d).onchange = e => { D.design.roundLooks = e.target.checked; changed({ tree: false }); };
+    $('#dWidth', d).oninput = e => { D.design.maxWidth = +e.target.value; $('#dWVal', d).textContent = `${D.design.maxWidth}px`; changed({ tree: false }); };
+  });
+};
+
+/* =====================================================================
+   미리보기
+   ===================================================================== */
+let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
+const LOOKBOOK_JS_MIN = '20261118-cat';      // 이 관리자에 맞는 lookbook.js 최소 버전
+const frameWin = () => $('#pvFrame').contentWindow;
+function sendPreview(keepScroll) {
+  try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
+}
+function pushPreview() {
+  if (!pvOpen || !pvReady) return;
+  clearTimeout(pvPushT); pvPushT = setTimeout(() => sendPreview(true), 300);
+}
+// PC는 1440px 화면을 패널 폭에 맞게 축소, 모바일은 390px
+function fitPreview() {
+  if (!pvOpen) return;
+  const st = $('#pvStage'), box = $('#pvBox');
+  const W = pvMode === 'pc' ? 1440 : 390, pad = pvMode === 'pc' ? 0 : 20;
+  const s = Math.min(1, (st.clientWidth - pad * 2) / W);
+  box.style.width = W + 'px';
+  box.style.height = Math.max(200, (st.clientHeight - pad * 2) / s) + 'px';
+  box.style.top = pad + 'px';
+  box.style.transformOrigin = 'top left';
+  box.style.transform = `translateX(-${W * s / 2}px) scale(${s})`;
+}
+function loadPreview() {
+  pvReady = false; pvAck = false;
+  $('#pvMsg').classList.toggle('on', false); $('#pvLoading').classList.add('on');
+  $('#pvFrame').src = `index.html?preview=1&login=1&t=${Date.now()}#${encodeURIComponent(cur || '')}`;
+  clearInterval(pvPing); clearTimeout(pvTimer);
+  // 룩북 화면이 준비될 때까지 확인 → 편집 데이터 전송 → 받았다는 응답이 올 때까지 재시도
+  pvPing = setInterval(() => {
+    try { pvReady ? (!pvAck && sendPreview(false)) : frameWin().postMessage({ type: 'lookbook-ping' }, '*'); } catch {}
+  }, 500);
+  pvTimer = setTimeout(() => {
+    if (pvAck) return;
+    clearInterval(pvPing); $('#pvLoading').classList.toggle('on', false); $('#pvMsg').classList.add('on');
+  }, 4000);
+}
+window.addEventListener('message', e => {
+  if (e.source !== frameWin()) return;
+  if (e.data?.type === 'lookbook-ready') {
+    if (!pvReady) { pvReady = true; sendPreview(false); }
+    // 미리보기에 예전 lookbook.js 가 열려 있으면 알려줌 (새 기능이 미리보기에 안 보이는 원인)
+    $('#pvOld').hidden = (e.data.version || '') >= LOOKBOOK_JS_MIN;
+  }
+  if (e.data?.type === 'lookbook-preview-ok' && !pvAck) {
+    pvAck = true; clearInterval(pvPing); clearTimeout(pvTimer);
+    $('#pvLoading').classList.toggle('on', false); $('#pvMsg').classList.toggle('on', false);
+  }
+});
+function setPreview(on) {
+  pvOpen = on;
+  document.body.classList.toggle('pv-on', on);
+  $('#btnPreview').classList.toggle('on', on);
+  $('#btnPreview').textContent = on ? '미리보기 닫기' : '미리보기';
+  if (on) { fitPreview(); loadPreview(); }
+  else { clearInterval(pvPing); clearTimeout(pvTimer); $('#pvFrame').src = 'about:blank'; }
+}
+$('#btnPreview').onclick = () => setPreview(!pvOpen);
+$('#pvClose').onclick = () => setPreview(false);
+$('#pvReload').onclick = () => loadPreview();
+$('#pvRetry').onclick = () => loadPreview();
+$('#pvSeg').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; pvMode = b.dataset.d; $$('#pvSeg button').forEach(x => x.classList.toggle('on', x === b)); fitPreview(); };
+window.addEventListener('resize', fitPreview);
+
+/* =====================================================================
+   내보내기
+   ===================================================================== */
+function buildData(forPreview) {
+  const used = new Set();
+  const lookbooks = D.lookbooks.map(b => {
+    const base = isSpecial(b) ? { id: b.id, type: 'special', title: b.title } : { id: b.id, year: b.year, season: b.season, title: b.title };
+    if (b.hidden) base.hidden = true;
+    b.categories = Array.isArray(b.categories) ? b.categories : [];
+    if (b.categories.length) base.categories = b.categories.map(c => ({ id: c.id, name: c.name }));
+    base.looks = b.looks.map(l => {
+      l.products.forEach(n => used.add(n));
+      const path = l._file ? `images/${b.id}/${l._file}` : l.image;
+      const o = { image: path, products: [...l.products] };
+      if (l.category && b.categories.some(c => c.id === l.category)) o.category = l.category;
+      if (forPreview && l._img) { const c = lookImg(l); o.image = c.blob; o.imageKey = c.key; }   // 미리보기엔 Blob(복사 비용 거의 없음)
+      if (l.video) o.video = l.video;
+      return o;
+    });
+    return base;
+  });
+  const products = {};
+  [...used].sort((a, b) => a - b).forEach(n => { if (D.products[n]) products[n] = D.products[n]; });
+  return { design: { ...D.design }, seasons: clone(D.seasons), lookbooks, products };
+}
+function dataJs(data) {
+  return `/* =====================================================================
+   VICTOR LOOKBOOK — 데이터 파일 (admin.html 에서 자동 생성: ${new Date().toLocaleString('ko-KR')})
+   직접 고치기보다 admin.html 로 편집 후 [내보내기] 하는 것을 권장합니다.
+
+   design    : radius = 시트 상품 썸네일·옵션 선택·장바구니 버튼 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용
+               maxWidth = 콘텐츠 최대 폭(px), 넓은 화면에서는 양옆이 여백   seasons   : 시즌 선택 드롭다운 목록 (순서대로 표시)
+   lookbooks : 룩북 목록 (같은 그룹 안에서는 위에 있을수록 탭 앞쪽)
+               type: 'special' = 연도·시즌 없는 스페셜 룩북 (탭 줄 뒤쪽에 항상 표시)
+               looks 가 비어 있으면 "준비중입니다", hidden: true 면 사이트에 안 보임
+               categories: [{ id, name }] = 룩북 안 카테고리 (제목 아래 나열), 각 룩의 category 로 연결
+   products  : 상품 API가 응답하지 않을 때 대신 보여줄 상품명
+   ===================================================================== */
+window.LOOKBOOK_DATA = ${JSON.stringify(data, null, 2)};
+`;
+}
+function issues() {
+  const list = [];
+  D.lookbooks.forEach(b => {
+    if (!String(b.title || '').trim()) list.push(`'${b.id}' 룩북 제목이 비어 있어요`);
+    b.looks.forEach((l, i) => {
+      if (!l.products.length) list.push(`${b.title} · LOOK ${i + 1}: 연결된 상품이 없어요`);
+      if (!l._img && !l.image) list.push(`${b.title} · LOOK ${i + 1}: 이미지가 없어요`);
+    });
+  });
+  return list;
+}
+function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`; };
+const dataUrlBytes = (u) => { const b = atob(u.split(',')[1]); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; };
+
+$('#btnExport').onclick = async () => {
+  await saveNow(false);
+  const news = D.lookbooks.flatMap(b => b.looks.filter(l => l._img).map(l => ({ b, l })));
+  const gifs = news.filter(x => /\.gif$/i.test(x.l._file)).length;
+  const iss = issues();
+  openDialog('내보내기', `<div class="stack">
+    ${iss.length ? `<div class="issues"><b>확인해 주세요</b><br>${iss.map(esc).join('<br>')}</div>` : ''}
+    <ol class="steps">
+      <li><span><b>ZIP 다운로드</b> — lookbook-data.js${news.length ? ` + 새 이미지 ${news.length}장${gifs ? ` (GIF ${gifs}장 포함)` : ''}` : ''}이 들어 있어요.</span></li>
+      <li><span>압축을 풀고, 카페24 관리자 <b>디자인 &gt; 파일 업로드(또는 FTP)</b>에서 룩북 폴더(index.html이 있는 곳)에 <b>그대로 덮어쓰기</b> 업로드하세요. images 폴더 구조도 그대로 올려야 해요.</span></li>
+      <li><span>사이트에서 새로고침하면 반영돼요. (최대 5분 걸릴 수 있어요)</span></li>
+      <li><span>업로드를 마쳤으면 아래 <b>업로드 완료</b>를 눌러 임시 이미지를 정리하세요.</span></li>
+    </ol>
+  </div>`,
+  `<button class="btn" id="exJs">데이터 파일만 받기</button>${news.length ? '<button class="btn" id="exDone">업로드 완료</button>' : ''}<button class="btn primary" id="exZip">ZIP 다운로드</button>`,
+  d => {
+    $('#exZip', d).onclick = () => {
+      const files = [{ name: 'lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
+      news.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._file}`, data: dataUrlBytes(l._img) }));
+      download(makeZip(files), `lookbook-update-${stamp()}.zip`);
+      toast('ZIP을 내려받았어요');
+    };
+    $('#exJs', d).onclick = () => { download(new Blob([dataJs(buildData(false))], { type: 'text/javascript' }), 'lookbook-data.js'); };
+    const done = $('#exDone', d);
+    if (done) done.onclick = () => {
+      if (!confirm('카페24에 이미지와 데이터 파일을 모두 올렸나요?\n임시 이미지를 정리하고, 이후엔 업로드된 파일 경로를 사용해요.')) return;
+      news.forEach(({ b, l }) => { l.image = `images/${b.id}/${l._file}`; delete l._img; delete l._file; });
+      d.close(); changed({ main: true }); saveNow(false); toast('정리했어요');
+    };
+  });
+};
+
+/* ZIP 만들기 (외부 라이브러리 없이, 무압축) */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  const d = new Date();
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true);
+    h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true);
+    c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true);
+    c.setUint32(38, 0, true); c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const size = central.reduce((a, b) => a + b.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, size, true); e.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], { type: 'application/zip' });
+}
+
+/* =====================================================================
+   시작
+   ===================================================================== */
+let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600); }
+window.addEventListener('beforeunload', e => { if (dirty) { saveNow(false); e.preventDefault(); e.returnValue = ''; } });
+
+(async function init() {
+  if (!window.LOOKBOOK_DATA) $('#banner').innerHTML = `<div class="banner"><span>lookbook-data.js를 찾지 못했어요. admin.html을 index.html과 같은 폴더에 두고 여세요.</span></div>`;
+  try {
+    const draft = await idb.get('draft');
+    if (draft?.D) {
+      D = normalize(draft.D); cur = draft.cur;
+      $('#banner').innerHTML = `<div class="banner"><span>저장해 둔 작업을 불러왔어요 (${new Date(draft.at).toLocaleString('ko-KR')})</span>
+        <button class="btn sm" id="resetDraft">사이트 파일 기준으로 다시 시작</button></div>`;
+      $('#resetDraft').onclick = async () => {
+        if (!confirm('저장된 작업을 버리고 현재 lookbook-data.js 기준으로 다시 시작할까요?')) return;
+        await idb.del('draft'); D = normalize(clone(SOURCE)); cur = D.lookbooks[0]?.id || null; $('#banner').innerHTML = ''; tried.clear();
+        renderTree(); renderMain(); dirty = false; $('#btnSave').classList.remove('dirty'); toast('다시 불러왔어요');
+      };
+      $('#saveState').textContent = `저장됨 ${new Date(draft.at).toTimeString().slice(0, 5)}`;
+    }
+  } catch {}
+  await loadCatalog(); updateCatalogBtn();
+  if (!D.lookbooks.some(b => b.id === cur)) cur = D.lookbooks[0]?.id || null;
+  renderTree(); renderMain();
+  // 카페24에 올린 관리자에서 열었고 목록이 비었거나 오래됐으면(3일) 조용히 새로 받아 둠
+  if (location.protocol !== 'file:' && (!CATALOG.length || Date.now() - catalogAt > 3 * 864e5)) {
+    // 열 때는 가벼운 상품 목록 API만 (사이트 검색 페이지 여러 장 읽기는 [상품 목록 → 사이트에서 불러오기]를 누를 때만)
+    syncFromSite('빅터', null, false).then(() => { updateCatalogBtn(); autofillAll(); }).catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
