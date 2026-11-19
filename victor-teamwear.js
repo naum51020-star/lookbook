@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   if (window.VictorTeamwear) return;
-  const VERSION = '20261119-tw2';
+  const VERSION = '20261119-tw3';
   const SCRIPT = document.currentScript;
   const BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
   const W = 1080, H = 1350;                                   // 결과 이미지 4:5 (SNS·카톡 공유용)
@@ -75,6 +75,31 @@
 .vtw-btns .dark{background:#111 !important;color:#fff !important}
 .vtw-btns .line{border:1px solid #111 !important}
 .vtw-btns .full{grid-column:1/-1;height:40px;font-size:13px;font-weight:500;color:#555 !important;text-decoration:underline;text-underline-offset:3px}
+.vtw-up{display:block;width:100%;height:48px;margin-top:10px;border:2px solid #111 !important;background:#fff;font-size:14px !important;font-weight:800 !important}
+.vtw-up:hover{background:#111 !important;color:#fff !important}
+.vtw-up.sm{display:inline-block;width:auto;height:38px;margin:0;padding:0 16px !important;font-size:13px !important}
+.vtw-gal{margin-top:56px;border-top:1px solid #000;padding-top:28px}
+.vtw-gal[hidden]{display:none}
+.vtw-gal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+.vtw-gal-head h4{font-size:18px;font-weight:700}
+.vtw-gal-head small{font-size:13px;color:#888;font-weight:500;margin-left:4px}
+.vtw-gal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px 18px}
+.vtw-card{display:flex;flex-direction:column;gap:3px;color:#111;text-decoration:none;min-width:0}
+.vtw-card .ph{display:block;border:1px solid #000;padding:5px;background:#fff;margin-bottom:8px}
+.vtw-card .ph img{width:100%;aspect-ratio:4/5;object-fit:cover;background:#f3f3f3}
+.vtw-card b{font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtw-card .ln{font-size:12px;color:#555;line-height:1.5;word-break:keep-all}
+.vtw-card .dt{font-size:11px;color:#aaa;margin-top:2px}
+.vtw-modal{position:fixed;inset:0;z-index:2147483002;display:grid;place-items:center;padding:24px;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+.vtw-modal.on{opacity:1;pointer-events:auto}
+.vtw-modal-card{width:min(380px,100%);background:#fff;padding:40px 28px 28px;text-align:center;border-radius:12px}
+.vtw-modal-card h5{font-size:18px;font-weight:700}
+.vtw-modal-card p{font-size:14px;color:#555;line-height:1.65;margin-top:12px}
+.vtw-modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:28px}
+.vtw-modal-btns a,.vtw-modal-btns button{height:50px;display:grid;place-items:center;font-size:14px;font-weight:700;border-radius:8px;text-decoration:none}
+.vtw-modal-btns .dark{background:#111;color:#fff}
+.vtw-modal-btns .line{border:1px solid #111 !important}
+.vtw-cta[hidden],.vtw-up[hidden]{display:none !important}
 .vtw-cta{display:block;margin-top:14px;text-align:center;font-size:12.5px;line-height:1.6;background:var(--soft);padding:12px;word-break:keep-all}
 .vtw-cta a{font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .vtw-toast{position:fixed;left:50%;bottom:36px;transform:translate(-50%,16px);background:#111;color:#fff;font-size:14px;padding:12px 20px;border-radius:30px;opacity:0;pointer-events:none;transition:.3s;z-index:2147483001;white-space:nowrap}
@@ -92,6 +117,8 @@
   .vtw-whob{flex-direction:column;justify-content:center;gap:6px;height:84px;font-size:13px;padding:0 !important;text-align:center}
   .vtw-model .ck{right:8px;top:8px;width:22px;height:22px;font-size:11px}
   .vtw-items{grid-template-columns:repeat(3,1fr);gap:8px}
+  .vtw-gal-grid{grid-template-columns:repeat(2,1fr);gap:20px 10px}
+  .vtw-gal-head h4{font-size:16px}
 }`;
 
   function mount(root, opts = {}) {
@@ -99,7 +126,7 @@
     root.classList.add('vtw');
     root.innerHTML = '<div class="vtw-empty" style="text-align:center;padding:60px 0">단체복 시뮬레이션을 불러오는 중…</div>';
     const shareUrl = opts.shareUrl || (location.origin + location.pathname + location.search + '#teamwear');
-    const done = (D) => build(root, D, shareUrl);
+    const done = (D) => build(root, D, shareUrl, opts.gallery || {});
     if (window.TEAMWEAR_DATA) return done(window.TEAMWEAR_DATA);
     const sc = document.createElement('script');
     const u = new URL(opts.dataSrc || 'victor-teamwear-data.js', BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
@@ -108,7 +135,7 @@
     document.head.appendChild(sc);
   }
 
-  function build(root, D, shareUrl) {
+  function build(root, D, shareUrl, GAL) {
     const P = D.people || {}, CV = D.canvas || { w: 720, h: 1720, shoulderY: 300 };
     if (!(P.F || []).length && !(P.M || []).length) { root.innerHTML = '<div class="vtw-empty">준비중입니다</div>'; return; }
     const looks = (g) => P[g] || [];
@@ -148,11 +175,18 @@
               <button type="button" class="line" data-r="share">공유하기</button>
               <button type="button" class="full" data-r="copy">링크 복사해서 카톡에 붙여넣기</button>
             </div>
+            <button type="button" class="vtw-up" data-r="up">우리 조합 갤러리에 올리기</button>
             <p class="vtw-note">※ 사진을 이어 붙여 만든 이미지라 실제 제품의 색상·핏·디테일과 다를 수 있어요. 참고용으로만 봐 주세요.</p>
             <p class="vtw-cta" data-r="cta" hidden>이 조합이 마음에 드시나요? <a href="#" data-r="ask">단체복 견적 문의하기</a></p>
           </section>
         </div>
       </div>
+      <section class="vtw-gal" data-r="galWrap" hidden>
+        <div class="vtw-gal-head"><h4>클럽들이 고른 단체복 <small data-r="galCnt"></small></h4><button type="button" class="vtw-up sm" data-r="up2">+ 우리 조합 올리기</button></div>
+        <div class="vtw-gal-grid" data-r="gal"></div>
+      </section>
+      <div class="vtw-modal" data-r="login"><div class="vtw-modal-card"><h5>로그인이 필요해요</h5><p>로그인하시면 우리 클럽 단체복 조합을<br>갤러리에 올려 저장할 수 있어요.</p>
+        <div class="vtw-modal-btns"><a class="dark" data-r="loginGo" href="/member/login.html">로그인하기</a><button type="button" class="line" data-r="loginStay">계속 둘러보기</button></div></div></div>
       <div class="vtw-toast" data-r="toast"></div>`;
     const R = {}; root.querySelectorAll('[data-r]').forEach(n => { R[n.dataset.r] = n; });
     const canvas = root.querySelector('canvas'), ctx = canvas.getContext('2d');
@@ -360,6 +394,105 @@
       await copyLink();
     });
     let tt; function toast(m) { R.toast.textContent = m; R.toast.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => R.toast.classList.remove('on'), 2000); }
+
+    /* ===== 갤러리 (카페24 게시판에 저장 · 로그인한 사람만 올리기 · 관리자는 카페24에서 삭제) ===== */
+    const boardNo = +GAL.boardNo || 0, hiddenNos = new Set((GAL.hidden || []).map(Number));
+    const boardList = () => `/board/gallery/list.html?board_no=${boardNo}`;
+    const boardWrite = () => `/board/gallery/write.html?board_no=${boardNo}`;
+    function outfitText() {
+      const order = st.who === 'FM' ? ['F', 'M'] : [st.who];
+      return order.map(g => {
+        const s = st.sel[g], t = L(g, s.top), b = L(g, s.bottom);
+        return `${g === 'F' ? '여자' : '남자'} ${t?.top?.name || '-'} + ${b?.bottom?.name || '-'}`;
+      }).join(' / ');
+    }
+    const postTitle = () => `[${(st.club.trim() || '클럽명 없음').replace(/[\[\]]/g, '')}] ${outfitText()}`.slice(0, 120);
+    function parseTitle(t) {
+      const m = String(t).match(/^\s*\[([^\]]*)\]\s*(.*)$/);
+      return m ? { club: m[1], lines: m[2].split(/\s*\/\s*/).filter(Boolean) } : { club: t, lines: [] };
+    }
+    function parseBoard(html) {
+      const doc = new DOMParser().parseFromString(html, 'text/html'), map = new Map();
+      doc.querySelectorAll('a[href*="read.html"]').forEach(a => {
+        const href = a.getAttribute('href'), m = href.match(/[?&]no=(\d+)/); if (!m || !new RegExp(`board_no=${boardNo}(\\D|$)`).test(href)) return;
+        const no = +m[1], li = a.closest('li') || a.parentElement, e = map.get(no) || { no, href: new URL(href, location.origin).href, title: '', img: '', date: '' };
+        const img = li?.querySelector('img'); if (!e.img && img) e.img = img.getAttribute('src') || '';
+        const tt = (li?.querySelector('.titleTxt, .subject, .title') || (a.querySelector('img') ? null : a))?.textContent?.trim(); if (!e.title && tt) e.title = tt;
+        const d = li?.textContent.match(/\d{4}-\d{2}-\d{2}/); if (!e.date && d) e.date = d[0];
+        map.set(no, e);
+      });
+      return [...map.values()].filter(e => e.title && !hiddenNos.has(e.no));
+    }
+    let galItems = [];
+    async function loadGallery() {
+      if (!boardNo) return;
+      R.galWrap.hidden = false;
+      try {
+        const r = await fetch(boardList(), { credentials: 'include' }); if (!r.ok) throw 0;
+        galItems = parseBoard(await r.text());
+      } catch { R.gal.innerHTML = '<div class="vtw-empty">갤러리를 불러오지 못했어요.</div>'; return; }
+      R.galCnt.textContent = galItems.length ? `${galItems.length}` : '';
+      R.gal.innerHTML = galItems.length ? galItems.map(e => { const p = parseTitle(e.title); return `<a class="vtw-card" href="${esc(e.href)}" target="_blank" rel="noopener">
+          <span class="ph">${e.img ? `<img src="${esc(e.img)}" alt="" loading="lazy">` : ''}</span>
+          <b>${esc(p.club)}</b>${p.lines.map(l => `<span class="ln">${esc(l)}</span>`).join('')}${e.date ? `<span class="dt">${esc(e.date)}</span>` : ''}</a>`; }).join('')
+        : '<div class="vtw-empty">아직 올라온 조합이 없어요. 첫 번째로 올려 보세요!</div>';
+    }
+    const loggedIn = () => {
+      const q = new URLSearchParams(location.search); if (q.has('login')) return q.get('login') === '1';
+      if (typeof window.LOOKBOOK_IS_LOGGED_IN === 'function') return !!window.LOOKBOOK_IS_LOGGED_IN();
+      return !!document.querySelector('.xans-layout-statelogon');
+    };
+    function showLogin() {
+      R.loginGo.href = `/member/login.html?returnUrl=${encodeURIComponent(location.pathname + location.search + '#teamwear')}`;
+      R.login.classList.add('on');
+    }
+    R.loginStay.addEventListener('click', () => R.login.classList.remove('on'));
+    R.login.addEventListener('click', e => { if (e.target === R.login) R.login.classList.remove('on'); });
+    async function upload() {
+      if (!boardNo) return toast('갤러리는 준비중이에요');
+      if (!loggedIn()) return showLogin();
+      if (!st.club.trim()) { R.club.focus(); return toast('클럽명을 먼저 입력해 주세요'); }
+      const blob = await toBlob(); if (!blob) return toast('이미지를 만들지 못했어요');
+      const title = postTitle(), body = `${title}\n\n${outfitText().split(' / ').join('\n')}\n\n(SPOFL 단체복 시뮬레이션으로 만든 이미지)`;
+      const w = window.open(boardWrite(), 'vtw_write', 'width=980,height=900');
+      if (!w) return fallback(blob, title, '팝업이 막혀 있어요.');
+      toast('글쓰기 창에 이미지와 내용을 채우는 중…');
+      const t0 = Date.now();
+      const tick = async () => {
+        if (w.closed) return;
+        let ok = false;
+        try {
+          const d = w.document, subj = d.querySelector('input[name="subject"]');
+          if (subj && d.readyState === 'complete') {
+            subj.value = title; subj.dispatchEvent(new w.Event('input', { bubbles: true }));
+            const ta = d.querySelector('textarea[name="content"]'); if (ta) ta.value = body;
+            d.querySelectorAll('iframe').forEach(f => { try { const b = f.contentDocument?.body; if (b && b.isContentEditable !== false && /content|editor/i.test(f.id + f.name + f.className)) b.innerHTML = body.replace(/\n/g, '<br>'); } catch {} });
+            const fi = d.querySelector('input[type="file"]');
+            if (fi) { const dt = new w.DataTransfer(); dt.items.add(new w.File([await blob.arrayBuffer()], fileName(), { type: 'image/jpeg' })); fi.files = dt.files; fi.dispatchEvent(new w.Event('change', { bubbles: true })); }
+            const tip = d.createElement('div');
+            tip.textContent = '✓ 단체복 이미지와 내용이 자동으로 채워졌어요. 확인 후 아래 [등록]을 눌러 주세요.';
+            tip.style.cssText = 'position:sticky;top:0;z-index:99999;background:#111;color:#fff;font:600 14px sans-serif;padding:12px 16px;text-align:center';
+            d.body.prepend(tip); ok = true;
+            toast(fi ? '새 창에서 [등록]만 누르면 올라가요' : '새 창에 이미지를 첨부하고 [등록]을 눌러 주세요');
+            if (!fi) saveFile(blob);
+          }
+        } catch {}
+        if (!ok && Date.now() - t0 < 20000) setTimeout(tick, 400);
+        else if (!ok) fallback(blob, title, '글쓰기 창을 자동으로 채우지 못했어요.');
+      };
+      setTimeout(tick, 600);
+    }
+    async function fallback(blob, title, why) {
+      saveFile(blob);
+      try { await navigator.clipboard.writeText(title); } catch {}
+      toast(`${why} 이미지를 저장하고 제목을 복사했어요 · 글쓰기에 붙여넣어 주세요`);
+      if (boardNo) setTimeout(() => window.open(boardWrite(), '_blank'), 800);
+    }
+    function saveFile(blob) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName(); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    R.up.addEventListener('click', upload); R.up2.addEventListener('click', upload);
+    window.addEventListener('focus', () => { if (root.isConnected) loadGallery(); });   // 글쓰기 창에서 등록하고 돌아오면 목록 새로고침
+    if (!boardNo) R.up.hidden = true;
+    loadGallery();
 
     renderItems(); draw();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);

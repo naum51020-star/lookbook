@@ -221,11 +221,12 @@
 <body>
 
 <header class="top">
-  <h1>VICTOR LOOKBOOK<span>관리자 · v20261119-team</span></h1>
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261119-gal</span></h1>
   <div class="top-actions">
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
     <button class="btn" id="btnNames">상품 목록</button>
+    <button class="btn" id="btnGal">단체복 갤러리</button>
     <button class="btn" id="btnDesign">디자인</button>
     <button class="btn" id="btnPreview">미리보기</button>
     <button class="btn" id="btnSave">저장</button>
@@ -375,7 +376,7 @@ let cur = null;
 
 function normalize(d) {
   d.design = { radius: 8, roundLooks: false, maxWidth: 1200, ...(d.design || {}) };
-  d.teamwear = { enabled: true, ...(d.teamwear || {}) };            // 단체복 시뮬레이션 섹션 보이기/숨기기
+  d.teamwear = { enabled: true, boardNo: 0, hidden: [], ...(d.teamwear || {}) };            // 단체복 시뮬레이션 섹션 보이기/숨기기
   delete d.design.ratio;                 // 비율은 3:4 고정 (예전 저장본에 남은 값 정리)
   d.seasons = d.seasons || [{ key: 'SS', label: 'SPRING/SUMMER' }, { key: 'FW', label: 'FALL/WINTER' }];
   d.lookbooks = d.lookbooks || [];
@@ -1252,6 +1253,46 @@ function autofillAll() {
 
 /* 디자인 */
 /* 단체복 시뮬레이션 섹션 보이기/숨기기 (단체복 목록은 관리자에 넣지 않음 → 가볍게) */
+/* 단체복 갤러리: 사람들이 올린 조합 보기 · 사이트에서 숨기기 (완전 삭제는 카페24 관리자 게시판에서) */
+$('#btnGal').onclick = () => {
+  const T = D.teamwear; T.hidden = T.hidden || [];
+  const offline = location.protocol === 'file:';
+  openDialog('단체복 갤러리', `<div class="stack">
+    <div class="cat-box"><h4>① 저장할 카페24 게시판</h4>
+      <p class="hint" style="margin-bottom:8px">카페24 관리자 → <b>게시판 관리 → 게시판 추가</b>에서 <b>갤러리형</b> 게시판을 만들고(쓰기 권한: 회원), 그 게시판 번호(board_no)를 넣어 주세요.</p>
+      <div class="row" style="grid-template-columns:140px 1fr auto"><input type="number" id="gNo" value="${+T.boardNo || ''}" placeholder="게시판 번호"><span class="hint">${T.boardNo ? `사이트 목록: /board/gallery/list.html?board_no=${+T.boardNo}` : '아직 설정 안 됨 → 사이트에 갤러리가 안 보여요'}</span><button class="btn" id="gSave">적용</button></div></div>
+    <div class="cat-box"><h4>② 올라온 조합 <span class="hint" id="gCnt"></span></h4>
+      <p class="hint" style="margin-bottom:10px">이상한 글은 <b>사이트에서 숨기기</b>를 체크하세요(내보내기 후 업로드하면 반영). <b>완전히 지우려면</b> 카페24 관리자 → 게시판 관리 → 게시물 관리에서 삭제하면 바로 사라져요.</p>
+      <div id="gList" class="stack" style="gap:8px">${T.boardNo ? '<p class="hint"><span class="spin"></span>불러오는 중…</p>' : '<p class="hint">게시판 번호를 먼저 넣어 주세요.</p>'}</div></div>
+  </div>`, `<span class="grow"></span><button class="btn primary" data-x>완료</button>`, d => {
+    const load = async () => {
+      if (!T.boardNo) return;
+      const list = $('#gList', d);
+      try {
+        const r = await fetch(`${ORIGIN}/board/gallery/list.html?board_no=${+T.boardNo}`, { credentials: 'include' }); if (!r.ok) throw 0;
+        const doc = new DOMParser().parseFromString(await r.text(), 'text/html'), map = new Map();
+        doc.querySelectorAll('a[href*="read.html"]').forEach(a => {
+          const href = a.getAttribute('href'), m = href.match(/[?&]no=(\d+)/); if (!m || !href.includes(`board_no=${+T.boardNo}`)) return;
+          const no = +m[1], li = a.closest('li') || a.parentElement, e = map.get(no) || { no, href, title: '', img: '', date: '' };
+          const img = li?.querySelector('img'); if (!e.img && img) e.img = img.getAttribute('src') || '';
+          const tt = (li?.querySelector('.titleTxt, .subject, .title') || (a.querySelector('img') ? null : a))?.textContent?.trim(); if (!e.title && tt) e.title = tt;
+          const dt = li?.textContent.match(/\d{4}-\d{2}-\d{2}/); if (!e.date && dt) e.date = dt[0];
+          map.set(no, e);
+        });
+        const items = [...map.values()].filter(e => e.title);
+        $('#gCnt', d).textContent = `${items.length}개`;
+        list.innerHTML = items.length ? items.map(e => `<div class="sitem" style="grid-template-columns:64px 1fr auto">
+            <div class="st" style="width:64px;height:80px;${e.img ? `background-image:url('${esc(absUrl(e.img))}')` : ''}"></div>
+            <div><div class="sn">${esc(e.title)}</div><div class="sm">#${e.no}${e.date ? ' · ' + esc(e.date) : ''} · <a href="${esc(SHOP + e.href.replace(/^https?:\/\/[^/]+/, ''))}" target="_blank" rel="noopener" style="text-decoration:underline">글 보기</a></div></div>
+            <label class="chk" style="margin:0;white-space:nowrap"><input type="checkbox" data-hide="${e.no}" ${T.hidden.includes(e.no) ? 'checked' : ''}> 사이트에서 숨기기</label></div>`).join('')
+          : '<p class="hint">아직 올라온 글이 없어요.</p>';
+      } catch { list.innerHTML = `<p class="hint">목록을 불러오지 못했어요.${offline ? ' 내 컴퓨터에서 연 관리자라 사이트에 접속할 수 없어요. 카페24에 올린 victor-admin.html에서 열어 주세요.' : ''}</p>`; }
+    };
+    $('#gSave', d).onclick = () => { T.boardNo = +$('#gNo', d).value || 0; changed({ tree: false }); toast(T.boardNo ? `게시판 ${T.boardNo}번으로 설정했어요 · 내보내기 후 업로드하면 반영돼요` : '게시판 설정을 지웠어요'); d.close(); $('#btnGal').click(); };
+    d.addEventListener('change', e => { const n = +e.target.dataset.hide; if (!n) return; T.hidden = e.target.checked ? [...new Set([...T.hidden, n])] : T.hidden.filter(x => x !== n); changed({ tree: false }); toast(e.target.checked ? `#${n} 글을 숨겼어요 · 내보내기 후 업로드하면 사이트에서 사라져요` : `#${n} 글 숨김을 풀었어요`); });
+    load();
+  }, true);
+};
 $('#btnDesign').onclick = () => {
   openDialog('디자인', `<div class="stack">
     <div class="sample" id="dSample" style="--sr:${D.design.radius}px"><div class="t"></div><div class="s">옵션 선택</div><div class="b">장바구니</div></div>
@@ -1271,7 +1312,7 @@ $('#btnDesign').onclick = () => {
    미리보기
    ===================================================================== */
 let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
-const LOOKBOOK_JS_MIN = '20261119-team2';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
+const LOOKBOOK_JS_MIN = '20261119-gal';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
 const frameWin = () => $('#pvFrame').contentWindow;
 function sendPreview(keepScroll) {
   try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
@@ -1357,7 +1398,7 @@ function buildData(forPreview) {
   });
   const products = {};
   [...used].sort((a, b) => a - b).forEach(n => { if (D.products[n]) products[n] = D.products[n]; });
-  return { design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false }, seasons: clone(D.seasons), lookbooks, products };
+  return { design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false, boardNo: +D.teamwear.boardNo || 0, hidden: [...new Set((D.teamwear.hidden || []).map(Number))] }, seasons: clone(D.seasons), lookbooks, products };
 }
 function dataJs(data) {
   return `/* =====================================================================

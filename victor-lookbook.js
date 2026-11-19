@@ -14,7 +14,7 @@
   'use strict';
   if (window.VictorLookbook) return;
 
-  const VERSION = '20261119-team2';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
+  const VERSION = '20261119-gal';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
   const SCRIPT = document.currentScript;
   const SCRIPT_BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
 
@@ -387,7 +387,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
     function openTeam() {
       R.body.innerHTML = '<div class="vlb-team"></div>';
       const el = R.body.firstElementChild;
-      const go = () => window.VictorTeamwear.mount(el, { shareUrl: location.origin + location.pathname + location.search + '#teamwear' });
+      const go = () => window.VictorTeamwear.mount(el, { shareUrl: location.origin + location.pathname + location.search + '#teamwear', gallery: DATA.teamwear || {} });
       if (window.VictorTeamwear) return go();
       if (!teamLoading) teamLoading = new Promise((res, rej) => {
         const sc = document.createElement('script');
