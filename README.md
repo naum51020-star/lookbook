@@ -36,6 +36,6 @@
 | `sim/spofl-wm.png` | 워터마크 로고 |
 | `tools/make_looks.py` | 새 룩 사진을 같은 크기로 자르고 허리선 찾기 |
 
-- 관리자 상단 **[단체복]** 버튼으로 섹션 보이기/숨기기
+- 관리자에서 룩북마다 **"이 룩북에 단체복 NEW 섹션 보이기"** 체크 (체크한 룩북에만 보임)
 - 공유 링크: `victor-lookbook.html#teamwear`
 - 단체복 문의 버튼: 페이지에 `window.LOOKBOOK_TEAMWEAR_ASK_URL = '/문의주소'`

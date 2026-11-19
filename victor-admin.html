@@ -226,7 +226,6 @@
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
     <button class="btn" id="btnNames">상품 목록</button>
-    <button class="btn" id="btnTeam" title="룩북 카테고리 줄의 '단체복 NEW' 시뮬레이션 섹션 보이기/숨기기">단체복</button>
     <button class="btn" id="btnDesign">디자인</button>
     <button class="btn" id="btnPreview">미리보기</button>
     <button class="btn" id="btnSave">저장</button>
@@ -674,7 +673,7 @@ function renderTree() {
     ? `<div class="subcats">${b.categories.map(c => `<button class="subcat ${b.id === cur && adminCat === c.id ? 'on' : ''}" data-book="${esc(b.id)}" data-subcat="${esc(c.id)}"><span>└ ${esc(c.name)}</span><small>${b.looks.filter(l => l.category === c.id).length}룩</small></button>`).join('')}</div>`
     : '';
   const item = (b) => `<button class="book ${b.id === cur && (adminCat === 'all' || !(b.categories || []).length) ? 'on' : b.id === cur ? 'on-parent' : ''}" data-book="${esc(b.id)}">
-      <span>${esc(b.title || '(제목 없음)')}${b.hidden ? '<span class="tag">숨김</span>' : ''}${!b.looks.length ? '<span class="tag">준비중</span>' : ''}</span>
+      <span>${esc(b.title || '(제목 없음)')}${b.hidden ? '<span class="tag">숨김</span>' : ''}${b.teamwear ? '<span class="tag" style="background:#111;color:#fff">단체복</span>' : ''}${!b.looks.length ? '<span class="tag">준비중</span>' : ''}</span>
       <small>${b.looks.length}룩</small></button>${subs(b)}`;
   const specials = D.lookbooks.filter(isSpecial);
   const seasonal = D.lookbooks.filter(b => !isSpecial(b));
@@ -735,6 +734,7 @@ function renderMain() {
     </div>
     <p class="hint" style="margin-top:10px">${sp ? '스페셜 룩북은 연도·시즌 선택과 상관없이 사이트의 룩북 탭 줄 뒤쪽에 항상 보여요. (예: KISS EDITION, 콜라보)' : '선택한 연도·시즌의 탭 줄에 보여요.'}</p>
     <label class="chk"><input type="checkbox" data-bf="hidden" ${b.hidden ? 'checked' : ''}> 사이트에서 숨기기 <span class="hint">— 미리 만들어 두고 나중에 공개할 때</span></label>
+    <label class="chk"><input type="checkbox" data-bf="teamwear" ${b.teamwear ? 'checked' : ''}> 이 룩북에 <b>단체복 NEW</b> 섹션 보이기 <span class="hint">— 체크한 룩북에서만 카테고리 줄 끝에 '단체복'이 나와요</span></label>
     <div class="subcat-edit">
       <span class="sc-lbl">하위 카테고리</span>
       ${b.categories.map(c => `<span class="sc-chip">${esc(c.name)} <small>${b.looks.filter(l => l.category === c.id).length}</small><button type="button" data-act="sc-del" data-id="${esc(c.id)}" aria-label="${esc(c.name)} 삭제" title="삭제">✕</button></span>`).join('')}
@@ -826,6 +826,7 @@ $('#main').addEventListener('change', async e => {
   }
   if (bf === 'season') { b.season = t.value; changed({ main: true }); }
   if (bf === 'hidden') { if (t.checked) b.hidden = true; else delete b.hidden; changed(); }
+  if (bf === 'teamwear') { if (t.checked) b.teamwear = true; else delete b.teamwear; changed(); toast(t.checked ? `'${b.title}'에 단체복 섹션을 켰어요` : `'${b.title}'에서 단체복 섹션을 껐어요`); }
   if (bf === 'year') { if (!/^\d{4}$/.test(t.value)) { t.value = b.year; toast('연도는 4자리 숫자로 입력하세요'); } else { b.year = +t.value; changed({ main: true }); } }
   if (bf === 'id') {
     const v = slug(t.value);
@@ -1251,12 +1252,6 @@ function autofillAll() {
 
 /* 디자인 */
 /* 단체복 시뮬레이션 섹션 보이기/숨기기 (단체복 목록은 관리자에 넣지 않음 → 가볍게) */
-function updateTeamBtn() { const on = D.teamwear.enabled !== false; $('#btnTeam').innerHTML = `단체복 <b style="margin-left:2px;color:${on ? 'var(--ok)' : '#aaa'}">${on ? '보임' : '숨김'}</b>`; }
-$('#btnTeam').onclick = () => {
-  D.teamwear.enabled = D.teamwear.enabled === false;
-  updateTeamBtn(); changed({ tree: false });
-  toast(D.teamwear.enabled ? '단체복 섹션을 보이게 했어요 · 내보내기 후 업로드하면 사이트에 반영돼요' : '단체복 섹션을 숨겼어요 · 내보내기 후 업로드하면 사이트에 반영돼요');
-};
 $('#btnDesign').onclick = () => {
   openDialog('디자인', `<div class="stack">
     <div class="sample" id="dSample" style="--sr:${D.design.radius}px"><div class="t"></div><div class="s">옵션 선택</div><div class="b">장바구니</div></div>
@@ -1276,7 +1271,7 @@ $('#btnDesign').onclick = () => {
    미리보기
    ===================================================================== */
 let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
-const LOOKBOOK_JS_MIN = '20261119-team';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
+const LOOKBOOK_JS_MIN = '20261119-team2';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
 const frameWin = () => $('#pvFrame').contentWindow;
 function sendPreview(keepScroll) {
   try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
@@ -1346,6 +1341,7 @@ function buildData(forPreview) {
   const lookbooks = D.lookbooks.map(b => {
     const base = isSpecial(b) ? { id: b.id, type: 'special', title: b.title } : { id: b.id, year: b.year, season: b.season, title: b.title };
     if (b.hidden) base.hidden = true;
+    if (b.teamwear) base.teamwear = true;
     b.categories = Array.isArray(b.categories) ? b.categories : [];
     if (b.categories.length) base.categories = b.categories.map(c => ({ id: c.id, name: c.name }));
     base.looks = b.looks.map(l => {
@@ -1370,7 +1366,7 @@ function dataJs(data) {
 
    design    : radius = 시트 상품 썸네일·옵션 선택·장바구니 버튼 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용
                maxWidth = 콘텐츠 최대 폭(px), 넓은 화면에서는 양옆이 여백
-   teamwear  : enabled = 룩북 카테고리 줄의 "단체복 NEW" 시뮬레이션 섹션 보이기 (단체복 목록·모델 사진은 victor-teamwear-data.js)
+   teamwear  : enabled = 단체복 섹션 전체 스위치. 실제로는 lookbooks[].teamwear: true 인 룩북에만 보임 (단체복 목록은 victor-teamwear-data.js)
    seasons   : 시즌 선택 드롭다운 목록 (순서대로 표시)
    lookbooks : 룩북 목록 (같은 그룹 안에서는 위에 있을수록 탭 앞쪽)
                type: 'special' = 연도·시즌 없는 스페셜 룩북 (탭 줄 뒤쪽에 항상 표시)
@@ -1476,12 +1472,12 @@ window.addEventListener('beforeunload', e => { if (dirty) { saveNow(false); e.pr
       $('#resetDraft').onclick = async () => {
         if (!confirm('저장된 작업을 버리고 현재 victor-lookbook-data.js 기준으로 다시 시작할까요?')) return;
         await idb.del('draft'); D = normalize(clone(SOURCE)); cur = D.lookbooks[0]?.id || null; $('#banner').innerHTML = ''; tried.clear();
-        renderTree(); renderMain(); updateTeamBtn(); dirty = false; $('#btnSave').classList.remove('dirty'); toast('다시 불러왔어요');
+        renderTree(); renderMain(); dirty = false; $('#btnSave').classList.remove('dirty'); toast('다시 불러왔어요');
       };
       $('#saveState').textContent = `저장됨 ${new Date(draft.at).toTimeString().slice(0, 5)}`;
     }
   } catch {}
-  await loadCatalog(); updateCatalogBtn(); updateTeamBtn();
+  await loadCatalog(); updateCatalogBtn();
   if (!D.lookbooks.some(b => b.id === cur)) cur = D.lookbooks[0]?.id || null;
   renderTree(); renderMain();
   // 카페24에 올린 관리자에서 열었고 목록이 비었거나 오래됐으면(3일) 조용히 새로 받아 둠

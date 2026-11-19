@@ -19,7 +19,7 @@ window.LOOKBOOK_DATA = {
   /* 디자인: radius = 시트의 옵션선택·장바구니 버튼·상품 썸네일 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용, maxWidth = 콘텐츠 최대 폭(px) */
   design: { radius: 8, roundLooks: false, maxWidth: 1200 },
 
-  /* 단체복 시뮬레이션 섹션 (룩북 카테고리 줄의 "단체복 NEW") — false 면 숨김. 단체복 목록은 victor-teamwear-data.js */
+  /* 단체복 섹션 전체 스위치 (false 면 어디에도 안 보임). 실제로는 lookbooks 안에서 teamwear: true 인 룩북에만 보임 */
   teamwear: { enabled: true },
 
   seasons: [

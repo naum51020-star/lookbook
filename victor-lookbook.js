@@ -14,7 +14,7 @@
   'use strict';
   if (window.VictorLookbook) return;
 
-  const VERSION = '20261119-team';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
+  const VERSION = '20261119-team2';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
   const SCRIPT = document.currentScript;
   const SCRIPT_BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
 
@@ -336,7 +336,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
 
       // 룩북 안 카테고리: 룩이 있는 카테고리만 제목 아래 가운데에 나열 (ALL + 카테고리들)
       const cats = (book?.categories || []).filter(c => looks.some(l => l.category === c.id));
-      const team = teamOn();                                   // 단체복 시뮬레이션 섹션 (관리자에서 숨기기 가능)
+      const team = teamOn(book);                               // 단체복 섹션: 관리자에서 켠 룩북에만 보임
       if (!(cats.some(c => c.id === state.cat) || (team && state.cat === 'team'))) state.cat = 'all';
       const chips = cats.length || team ? [{ id: 'all', name: 'ALL' }, ...cats] : [];
       R.cats.innerHTML = chips.map(c => `<button type="button" class="vlb-cat ${c.id === state.cat ? 'on' : ''}" data-cat="${esc(c.id)}" ${c.id === state.cat ? 'aria-current="true"' : ''}>${esc(c.name)}</button>`).join('')
@@ -382,7 +382,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       }
     }
     /* 단체복 시뮬레이션: 칩을 누를 때만 victor-teamwear.js 를 불러옴 (평소 룩북은 가볍게) */
-    const teamOn = () => (DATA.teamwear || {}).enabled !== false;
+    const teamOn = (b) => (DATA.teamwear || {}).enabled !== false && !!(b && b.teamwear);   // 전체 스위치 + 룩북별 켜기
     let teamLoading = null;
     function openTeam() {
       R.body.innerHTML = '<div class="vlb-team"></div>';
@@ -559,7 +559,10 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       if (visibleBooks().some(b => b.id === h)) select({ bookId: h }, false);
       else if (m && !DATA.lookbooks.some(b => b.id === h)) select({ year: +m[1], season: m[2].toUpperCase() }, false);
       else select({ bookId: visibleBooks().find(b => b.looks.length)?.id }, false);
-      if (h === 'teamwear' && teamOn() && state.cat !== 'team') { state.cat = 'team'; renderBook(); }   // 공유 링크(#teamwear)로 들어오면 바로 단체복
+      if (h === 'teamwear') {                                   // 공유 링크(#teamwear): 단체복이 켜진 룩북으로 가서 바로 단체복
+        const tb = visibleBooks().find(b => teamOn(b));
+        if (tb) { if (state.bookId !== tb.id) select({ bookId: tb.id }, false); state.cat = 'team'; renderBook(); }
+      }
     }
     function loadData() {
       const prev = window.LOOKBOOK_DATA;
