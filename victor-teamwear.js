@@ -206,7 +206,14 @@
           const code = st.sel[p.gender][part]; if (!code) return;
           const src = layers[`${m.id}/${p.id}/${code}`];
           const im = src ? want(asset(src)) : null;
-          if (im) ctx.drawImage(im, x, y, w, h); else missing.push([p, part, code]);
+          if (im) { ctx.drawImage(im, x, y, w, h); return; }
+          // AI 착장 이미지가 없으면: 고른 상의 누끼컷을 사진 속 상의 영역에 입히고 원래 주름 음영을 살림
+          if (part === 'top' && p.top) {
+            const ov = topOverlay(m, p, code);
+            if (ov) { const s = w / cut.width; ctx.drawImage(ov, x + p.top.box[0] * s, y + p.top.box[1] * s, p.top.box[2] * s, p.top.box[3] * s); return; }
+            if (ov === null) return;                         // 이미지 받는 중 → 받으면 다시 그림
+          }
+          missing.push([p, part, code]);
         }));
         missing.forEach(([p, part, code]) => tag(box, p, part, code));
       } else {
@@ -215,6 +222,39 @@
       }
       watermark();
     }
+    // 상의 입히기: (모델·사람·상품)별로 한 번 만들어 두고 재사용 → 클릭할 때마다 바로 바뀜
+    const ovCache = new Map();
+    function topOverlay(m, p, code) {
+      const key = `${m.id}/${p.id}/${code}`;
+      if (ovCache.has(key)) return ovCache.get(key);
+      const g = G(code); if (!g || !g.thumb) return undefined;
+      const gi = want(asset(g.thumb)), mi = want(asset(p.top.img));
+      if (!gi || !mi) return null;
+      const [, , bw, bh] = p.top.box;
+      const c = document.createElement('canvas'); c.width = bw; c.height = bh;
+      const x = c.getContext('2d');
+      x.fillStyle = baseColor(gi); x.fillRect(0, 0, bw, bh);   // 옷 그림 밖으로 삐져나온 곳은 그 옷의 기본 색으로
+      x.drawImage(gi, -bw * 0.03, -bh * 0.02, bw * 1.06, bh * 1.04);   // 누끼컷을 상의 영역에 맞춤 (가장자리 살짝 여유)
+      x.globalCompositeOperation = 'multiply'; x.drawImage(mi, 0, 0, bw, bh);   // 원래 옷의 주름·그림자
+      x.globalCompositeOperation = 'destination-in'; x.drawImage(mi, 0, 0, bw, bh);   // 상의 모양대로 자르기 (팔·머리카락은 그대로)
+      ovCache.set(key, c);
+      return c;
+    }
+    // 옷의 대표 색 (가운데 몸판 부분의 평균) — 한 번 계산해서 저장
+    const colorCache = new Map();
+    function baseColor(img) {
+      if (colorCache.has(img)) return colorCache.get(img);
+      const c = document.createElement('canvas'); c.width = 24; c.height = 24;
+      const x = c.getContext('2d'); x.drawImage(img, img.width * 0.3, img.height * 0.35, img.width * 0.4, img.height * 0.5, 0, 0, 24, 24);
+      const d = x.getImageData(0, 0, 24, 24).data; let r = 0, g = 0, b = 0, n = 0;
+      for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+      const col = n ? `rgb(${Math.round(r / n)},${Math.round(g / n)},${Math.round(b / n)})` : '#ddd';
+      colorCache.set(img, col); return col;
+    }
+    // 옷 이미지·상의 마스크 미리 받아두기
+    garments.forEach(g => g.thumb && getImg(asset(g.thumb)).then(im => ready.set(asset(g.thumb), im)));
+    models.forEach(m => m.people.forEach(p => p.top && getImg(asset(p.top.img)).then(im => ready.set(asset(p.top.img), im))));
+
     function drawCourt() {
       // 벽
       let g = ctx.createLinearGradient(0, 0, 0, H * 0.6);

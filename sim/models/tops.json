@@ -1,0 +1,62 @@
+{
+ "m1/p1": {
+  "top": "sim/models/m1-p1-top.png",
+  "box": [
+   54,
+   205,
+   310,
+   446
+  ],
+  "colorDiff": 138.8
+ },
+ "m1/p2": {
+  "top": "sim/models/m1-p2-top.png",
+  "box": [
+   364,
+   277,
+   312,
+   471
+  ],
+  "colorDiff": 197.2
+ },
+ "m2/p1": {
+  "top": "sim/models/m2-p1-top.png",
+  "box": [
+   20,
+   346,
+   450,
+   756
+  ],
+  "colorDiff": 72.1
+ },
+ "m2/p2": {
+  "top": "sim/models/m2-p2-top.png",
+  "box": [
+   415,
+   277,
+   514,
+   675
+  ],
+  "colorDiff": 49.0
+ },
+ "m3/p1": {
+  "top": "sim/models/m3-p1-top.png",
+  "box": [
+   22,
+   202,
+   386,
+   493
+  ],
+  "colorDiff": 143.2
+ },
+ "m3/p2": {
+  "top": "sim/models/m3-p2-top.png",
+  "box": [
+   408,
+   306,
+   329,
+   454
+  ],
+  "colorDiff": 221.0
+ }
+}
