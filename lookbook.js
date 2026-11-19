@@ -14,7 +14,7 @@
   'use strict';
   if (window.VictorLookbook) return;
 
-  const VERSION = '20261118-cat';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
+  const VERSION = '20261119-team';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
   const SCRIPT = document.currentScript;
   const SCRIPT_BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
 
@@ -73,6 +73,8 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
 .vlb .vlb-cat{font-size:13px;letter-spacing:.06em;color:var(--sub);padding:3px 0 5px !important;border-bottom:1px solid transparent !important;transition:color .2s;white-space:nowrap}
 .vlb .vlb-cat:hover{color:var(--fg)}
 .vlb .vlb-cat.on{color:var(--fg);font-weight:600;border-bottom-color:var(--fg) !important}
+.vlb .vlb-cat-team{display:inline-flex;align-items:center;gap:6px;color:var(--fg)}
+.vlb-new{display:inline-block;background:#111;color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.06em;line-height:1;padding:3px 5px 2px;vertical-align:1px}
 .vlb-body{margin-top:52px}
 
 .vlb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--row-gap) var(--col-gap)}
@@ -334,11 +336,12 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
 
       // 룩북 안 카테고리: 룩이 있는 카테고리만 제목 아래 가운데에 나열 (ALL + 카테고리들)
       const cats = (book?.categories || []).filter(c => looks.some(l => l.category === c.id));
-      if (!cats.some(c => c.id === state.cat)) state.cat = 'all';
-      R.cats.innerHTML = cats.length
-        ? [{ id: 'all', name: 'ALL' }, ...cats].map(c => `<button type="button" class="vlb-cat ${c.id === state.cat ? 'on' : ''}" data-cat="${esc(c.id)}" ${c.id === state.cat ? 'aria-current="true"' : ''}>${esc(c.name)}</button>`).join('')
-        : '';
-      R.cats.hidden = !cats.length;
+      const team = teamOn();                                   // 단체복 시뮬레이션 섹션 (관리자에서 숨기기 가능)
+      if (!(cats.some(c => c.id === state.cat) || (team && state.cat === 'team'))) state.cat = 'all';
+      const chips = cats.length || team ? [{ id: 'all', name: 'ALL' }, ...cats] : [];
+      R.cats.innerHTML = chips.map(c => `<button type="button" class="vlb-cat ${c.id === state.cat ? 'on' : ''}" data-cat="${esc(c.id)}" ${c.id === state.cat ? 'aria-current="true"' : ''}>${esc(c.name)}</button>`).join('')
+        + (team ? `<button type="button" class="vlb-cat vlb-cat-team ${state.cat === 'team' ? 'on' : ''}" data-cat="team" ${state.cat === 'team' ? 'aria-current="true"' : ''}>단체복<span class="vlb-new">NEW</span></button>` : '');
+      R.cats.hidden = !chips.length;
       const shown = looks.map((l, i) => [l, i]).filter(([l]) => state.cat === 'all' || l.category === state.cat);
 
       // 썸네일 구성이 그대로면 다시 그리지 않음 (이미지 재로딩·깜빡임 방지)
@@ -346,6 +349,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       if (sig === R.body.__sig) return;
       R.body.__sig = sig;
       if (gifIO) { gifIO.disconnect(); gifIO = null; }
+      if (state.cat === 'team') { openTeam(); return; }
       if (!looks.length) { R.body.innerHTML = `<div class="vlb-empty"><p>준비중입니다</p><small>COMING SOON</small></div>`; return; }
       R.body.innerHTML = `<div class="vlb-grid">${shown.map(([l, i], k) => {
         const n = i + 1, img = resolveAsset(l.image, l.imageKey);
@@ -377,6 +381,22 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
         vids.forEach(v => io.observe(v));
       }
     }
+    /* 단체복 시뮬레이션: 칩을 누를 때만 teamwear.js 를 불러옴 (평소 룩북은 가볍게) */
+    const teamOn = () => (DATA.teamwear || {}).enabled !== false;
+    let teamLoading = null;
+    function openTeam() {
+      R.body.innerHTML = '<div class="vlb-team"></div>';
+      const el = R.body.firstElementChild;
+      const go = () => window.VictorTeamwear.mount(el, { shareUrl: location.origin + location.pathname + location.search + '#teamwear' });
+      if (window.VictorTeamwear) return go();
+      if (!teamLoading) teamLoading = new Promise((res, rej) => {
+        const sc = document.createElement('script');
+        const u = new URL('teamwear.js', SCRIPT_BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
+        sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
+      });
+      el.innerHTML = '<div class="vlb-empty"><p>단체복 시뮬레이션을 불러오는 중…</p><small>TEAMWEAR</small></div>';
+      teamLoading.then(() => { if (el.isConnected) go(); }).catch(() => { teamLoading = null; el.innerHTML = '<div class="vlb-empty"><p>불러오지 못했어요</p><small>teamwear.js</small></div>'; });
+    }
     function select({ year, season, bookId }, push = true) {
       const prevBook = state.bookId;
       const b = bookId && visibleBooks().find(x => x.id === bookId);
@@ -395,7 +415,12 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
     R.year.addEventListener('change', e => select({ year: +e.target.value, season: state.season }));
     R.season.addEventListener('change', e => select({ year: state.year, season: e.target.value }));
     R.tabs.addEventListener('click', e => { const t = e.target.closest('[data-book]'); if (t) select({ bookId: t.dataset.book }); });
-    R.cats.addEventListener('click', e => { const c = e.target.closest('[data-cat]'); if (c && c.dataset.cat !== state.cat) { state.cat = c.dataset.cat; renderBook(); } });
+    R.cats.addEventListener('click', e => {
+      const c = e.target.closest('[data-cat]'); if (!c || c.dataset.cat === state.cat) return;
+      const wasTeam = state.cat === 'team';
+      state.cat = c.dataset.cat; renderBook();
+      if (o.useHash && (wasTeam || state.cat === 'team')) history.replaceState(history.state, '', location.pathname + location.search + (state.cat === 'team' ? '#teamwear' : state.bookId ? `#${state.bookId}` : ''));
+    });
 
     /* 탭 가로 스크롤 */
     function updateTabEdges() {
@@ -534,6 +559,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       if (visibleBooks().some(b => b.id === h)) select({ bookId: h }, false);
       else if (m && !DATA.lookbooks.some(b => b.id === h)) select({ year: +m[1], season: m[2].toUpperCase() }, false);
       else select({ bookId: visibleBooks().find(b => b.looks.length)?.id }, false);
+      if (h === 'teamwear' && teamOn() && state.cat !== 'team') { state.cat = 'team'; renderBook(); }   // 공유 링크(#teamwear)로 들어오면 바로 단체복
     }
     function loadData() {
       const prev = window.LOOKBOOK_DATA;

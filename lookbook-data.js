@@ -19,6 +19,9 @@ window.LOOKBOOK_DATA = {
   /* 디자인: radius = 시트의 옵션선택·장바구니 버튼·상품 썸네일 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용, maxWidth = 콘텐츠 최대 폭(px) */
   design: { radius: 8, roundLooks: false, maxWidth: 1200 },
 
+  /* 단체복 시뮬레이션 섹션 (룩북 카테고리 줄의 "단체복 NEW") — false 면 숨김. 단체복 목록은 teamwear-data.js */
+  teamwear: { enabled: true },
+
   seasons: [
     { key: 'SS', label: 'SPRING/SUMMER' },
     { key: 'FW', label: 'FALL/WINTER' },
