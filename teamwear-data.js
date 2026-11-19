@@ -84,70 +84,70 @@ window.TEAMWEAR_DATA = {
       "gender": "F",
       "part": "top",
       "name": "경기복 003",
-      "thumb": "drive:1m4G1m0UrFNGl-H4sRRPIc9yTNeN7Gnq-"
+      "thumb": "sim/garments/VTC6CGW003F.webp"
     },
     {
       "code": "VTC6CGW003M",
       "gender": "M",
       "part": "top",
       "name": "경기복 003",
-      "thumb": "drive:14YIWUEzNk7DYwxy9D9k6W11XrI0Jbcdo"
+      "thumb": "sim/garments/VTC6CGW003M.webp"
     },
     {
       "code": "VTC6CGW004F",
       "gender": "F",
       "part": "top",
       "name": "경기복 004",
-      "thumb": "drive:1kUrdhPR5DKO_XsmkI4JktNnKHY4Y1tYD"
+      "thumb": "sim/garments/VTC6CGW004F.webp"
     },
     {
       "code": "VTC6CGW004M",
       "gender": "M",
       "part": "top",
       "name": "경기복 004",
-      "thumb": "drive:19DZ5W6f14CdTLG1HIdg2bn1CDyMotqaQ"
+      "thumb": "sim/garments/VTC6CGW004M.webp"
     },
     {
       "code": "VTC6CGW008F",
       "gender": "F",
       "part": "top",
       "name": "경기복 008",
-      "thumb": "drive:1bERFksTVEc9VuO25MIy3NU6LMyc8Ud3b"
+      "thumb": "sim/garments/VTC6CGW008F.webp"
     },
     {
       "code": "VTC6CGW008M",
       "gender": "M",
       "part": "top",
       "name": "경기복 008",
-      "thumb": "drive:1y1l3WXi5rEm4qD6RGMZl2RnDuzuPha9D"
+      "thumb": "sim/garments/VTC6CGW008M.webp"
     },
     {
       "code": "VTC6CTO104U",
       "gender": "U",
       "part": "top",
       "name": "티셔츠 104",
-      "thumb": "drive:1OxPyXB7D_IMBM909SuaLArVidoYMjYrt"
+      "thumb": "sim/garments/VTC6CTO104U.webp"
     },
     {
       "code": "VTC6CTO105U",
       "gender": "U",
       "part": "top",
       "name": "티셔츠 105",
-      "thumb": "drive:1SP8tV6SdZKGFbOZp-susj6aJRh-cVs23"
+      "thumb": "sim/garments/VTC6CTO105U.webp"
     },
     {
       "code": "VTC6CTS002F",
       "gender": "F",
       "part": "top",
       "name": "이지티 002",
-      "thumb": "drive:1Jm146wB5rVjC5t5F1aX_gMkzHRv9WI8L"
+      "thumb": "sim/garments/VTC6CTS002F.webp"
     },
     {
       "code": "VTC6CTS002M",
       "gender": "M",
       "part": "top",
       "name": "이지티 002",
-      "thumb": "drive:1I6YLYbrScnU7LrUpVF46y2q4EmLAtLDe"
+      "thumb": "sim/garments/VTC6CTS002M.webp"
     }
   ],
   "layers": {}
