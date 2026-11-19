@@ -256,12 +256,12 @@
   <div class="pv-stage" id="pvStage">
     <div class="pv-box" id="pvBox"><iframe id="pvFrame" title="미리보기"></iframe></div>
     <span class="pv-loading" id="pvLoading">불러오는 중…</span>
-    <div class="pv-old" id="pvOld" hidden>미리보기에 <b>예전 lookbook.js</b>가 열려 있어요. 새 lookbook.js를 올린 뒤 <b>강력 새로고침</b>(Ctrl+Shift+R / Cmd+Shift+R) 해 주세요. 그 전에는 썸네일 비율 같은 새 설정이 미리보기에 안 보여요.</div>
+    <div class="pv-old" id="pvOld" hidden>미리보기에 <b>예전 victor-lookbook.js</b>가 열려 있어요. 새 victor-lookbook.js를 올린 뒤 <b>강력 새로고침</b>(Ctrl+Shift+R / Cmd+Shift+R) 해 주세요. 그 전에는 썸네일 비율 같은 새 설정이 미리보기에 안 보여요.</div>
     <div class="pv-msg" id="pvMsg"><div>
       <h4>미리보기를 불러오지 못했어요</h4>
-      <p>대부분 <b>예전 index.html</b>이 열려서 그래요. 아래를 확인해 주세요.</p>
+      <p>대부분 <b>예전 victor-lookbook.html</b>이 열려서 그래요. 아래를 확인해 주세요.</p>
       <ol>
-        <li>admin.html과 <b>같은 폴더</b>에 있는 index.html을 <b>이번에 받은 zip의 index.html로 교체</b>했는지</li>
+        <li>victor-admin.html과 <b>같은 폴더</b>에 있는 victor-lookbook.html을 <b>이번에 받은 zip의 victor-lookbook.html로 교체</b>했는지</li>
         <li>교체했다면 브라우저 <b>강력 새로고침</b> (Windows Ctrl+Shift+R / Mac Cmd+Shift+R)</li>
         <li>내 컴퓨터 파일로 열었다면 <b>Chrome</b>으로 열기 (Safari는 내 컴퓨터 파일끼리 연결을 막아요)</li>
       </ol>
@@ -271,7 +271,7 @@
 </aside>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="lookbook-data.js"></script>
+<script src="victor-lookbook-data.js"></script>
 <script>
 /* =====================================================================
    룩북 관리자 — 편집 → [저장] → [내보내기] → ZIP을 카페24 룩북 폴더에 업로드
@@ -288,7 +288,7 @@ const API = {
   search: (q) => `/product/search.html?keyword=${encodeURIComponent(q)}`,
 };
 const IMG_MAX_W = 1200;           // JPG/PNG: 3:4(세로) 비율로 자동 자르기 + 최대 가로 1200px (1200×1600)
-const THUMB_RATIO = 3 / 4;        // 룩 썸네일 비율 (가로:세로 = 3:4) — lookbook.js 와 같음
+const THUMB_RATIO = 3 / 4;        // 룩 썸네일 비율 (가로:세로 = 3:4) — victor-lookbook.js 와 같음
 
 // 새 이미지(_img, base64)는 화면·미리보기에선 Blob 주소로 씀 → 수정할 때마다 수 MB 글자를 다시 그리지 않음
 const imgCache = new WeakMap();   // look → { src, blob, url, key }
@@ -502,7 +502,7 @@ function autofillNames(nos) {
 /* =====================================================================
    상품 목록(카탈로그) — 한 번 받아두면 관리자 안에서 바로 검색
    받는 방법: ① 카페24 상품 엑셀/CSV 파일 넣기 (어디서 열어도 됨)
-             ② [사이트에서 불러오기] (admin.html을 카페24에 올려서 열었을 때)
+             ② [사이트에서 불러오기] (victor-admin.html을 카페24에 올려서 열었을 때)
    ===================================================================== */
 let CATALOG = [];                       // [{ no, name, price, image, _n, _c }]
 let catalogAt = 0;
@@ -719,7 +719,7 @@ function renderMain() {
   $('#main').innerHTML = `
   <section class="panel">
     <div class="panel-head">
-      <div><h2 id="bTitle">${esc(b.title) || '(제목 없음)'}</h2><p class="hint">사이트 주소: index.html#${esc(b.id)}</p></div>
+      <div><h2 id="bTitle">${esc(b.title) || '(제목 없음)'}</h2><p class="hint">사이트 주소: victor-lookbook.html#${esc(b.id)}</p></div>
       <div style="display:flex;gap:6px">
         <button class="btn sm" data-act="book-up" ${pos <= 0 ? 'disabled' : ''}>↑ 탭 앞으로</button>
         <button class="btn sm" data-act="book-down" ${pos >= g.length - 1 ? 'disabled' : ''}>↓ 탭 뒤로</button>
@@ -1214,7 +1214,7 @@ function openCatalog() {
         try { await syncFromSite(kw, n => { $('#catStatus', d).innerHTML = `<span class="spin"></span>${n.toLocaleString()}개 모으는 중…`; }); } catch {}
         btn.disabled = false; btn.textContent = '사이트에서 불러오기'; refresh();
         if (CATALOG.length > before) { autofillAll(); toast(`${(CATALOG.length - before).toLocaleString()}개 상품을 새로 불러왔어요`); }
-        else toast(offline ? '내 컴퓨터에서 연 관리자라 사이트에 접속하지 못했어요. ①엑셀로 불러오거나, 카페24에 올린 admin.html에서 해 주세요' : '새로 불러온 상품이 없어요. 검색어를 바꾸거나 ①엑셀로 불러와 주세요');
+        else toast(offline ? '내 컴퓨터에서 연 관리자라 사이트에 접속하지 못했어요. ①엑셀로 불러오거나, 카페24에 올린 victor-admin.html에서 해 주세요' : '새로 불러온 상품이 없어요. 검색어를 바꾸거나 ①엑셀로 불러와 주세요');
       };
       $('#catClear', d)?.addEventListener('click', () => {
         if (!confirm('불러온 상품 목록을 비울까요? (룩에 연결된 상품은 그대로예요)')) return;
@@ -1230,7 +1230,7 @@ function openCatalog() {
         const rs = await Promise.all(todo.map(fetchInfo));
         $('#pRows', d).innerHTML = rows(); $('#pFill', d).disabled = false; $('#pFill', d).textContent = '비어 있는 이름 자동 채우기';
         const ok = rs.filter(Boolean).length;
-        toast(ok ? `${ok}개 상품명을 채웠어요` : (location.protocol === 'file:' ? '사이트에 접속하지 못했어요. admin.html을 카페24에 올려서 열면 동작해요' : '상품 정보를 불러오지 못했어요'));
+        toast(ok ? `${ok}개 상품명을 채웠어요` : (location.protocol === 'file:' ? '사이트에 접속하지 못했어요. victor-admin.html을 카페24에 올려서 열면 동작해요' : '상품 정보를 불러오지 못했어요'));
         if (ok) changed({ tree: false });
       };
       d.onclose = () => renderMain();
@@ -1276,7 +1276,7 @@ $('#btnDesign').onclick = () => {
    미리보기
    ===================================================================== */
 let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
-const LOOKBOOK_JS_MIN = '20261119-team';      // 이 관리자에 맞는 lookbook.js 최소 버전
+const LOOKBOOK_JS_MIN = '20261119-team';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
 const frameWin = () => $('#pvFrame').contentWindow;
 function sendPreview(keepScroll) {
   try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
@@ -1300,7 +1300,7 @@ function fitPreview() {
 function loadPreview() {
   pvReady = false; pvAck = false;
   $('#pvMsg').classList.toggle('on', false); $('#pvLoading').classList.add('on');
-  $('#pvFrame').src = `index.html?preview=1&login=1&t=${Date.now()}#${encodeURIComponent(cur || '')}`;
+  $('#pvFrame').src = `victor-lookbook.html?preview=1&login=1&t=${Date.now()}#${encodeURIComponent(cur || '')}`;
   clearInterval(pvPing); clearTimeout(pvTimer);
   // 룩북 화면이 준비될 때까지 확인 → 편집 데이터 전송 → 받았다는 응답이 올 때까지 재시도
   pvPing = setInterval(() => {
@@ -1315,7 +1315,7 @@ window.addEventListener('message', e => {
   if (e.source !== frameWin()) return;
   if (e.data?.type === 'lookbook-ready') {
     if (!pvReady) { pvReady = true; sendPreview(false); }
-    // 미리보기에 예전 lookbook.js 가 열려 있으면 알려줌 (새 기능이 미리보기에 안 보이는 원인)
+    // 미리보기에 예전 victor-lookbook.js 가 열려 있으면 알려줌 (새 기능이 미리보기에 안 보이는 원인)
     $('#pvOld').hidden = (e.data.version || '') >= LOOKBOOK_JS_MIN;
   }
   if (e.data?.type === 'lookbook-preview-ok' && !pvAck) {
@@ -1365,12 +1365,12 @@ function buildData(forPreview) {
 }
 function dataJs(data) {
   return `/* =====================================================================
-   VICTOR LOOKBOOK — 데이터 파일 (admin.html 에서 자동 생성: ${new Date().toLocaleString('ko-KR')})
-   직접 고치기보다 admin.html 로 편집 후 [내보내기] 하는 것을 권장합니다.
+   VICTOR LOOKBOOK — 데이터 파일 (victor-admin.html 에서 자동 생성: ${new Date().toLocaleString('ko-KR')})
+   직접 고치기보다 victor-admin.html 로 편집 후 [내보내기] 하는 것을 권장합니다.
 
    design    : radius = 시트 상품 썸네일·옵션 선택·장바구니 버튼 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용
                maxWidth = 콘텐츠 최대 폭(px), 넓은 화면에서는 양옆이 여백
-   teamwear  : enabled = 룩북 카테고리 줄의 "단체복 NEW" 시뮬레이션 섹션 보이기 (단체복 목록·모델 사진은 teamwear-data.js)
+   teamwear  : enabled = 룩북 카테고리 줄의 "단체복 NEW" 시뮬레이션 섹션 보이기 (단체복 목록·모델 사진은 victor-teamwear-data.js)
    seasons   : 시즌 선택 드롭다운 목록 (순서대로 표시)
    lookbooks : 룩북 목록 (같은 그룹 안에서는 위에 있을수록 탭 앞쪽)
                type: 'special' = 연도·시즌 없는 스페셜 룩북 (탭 줄 뒤쪽에 항상 표시)
@@ -1404,8 +1404,8 @@ $('#btnExport').onclick = async () => {
   openDialog('내보내기', `<div class="stack">
     ${iss.length ? `<div class="issues"><b>확인해 주세요</b><br>${iss.map(esc).join('<br>')}</div>` : ''}
     <ol class="steps">
-      <li><span><b>ZIP 다운로드</b> — lookbook-data.js${news.length ? ` + 새 이미지 ${news.length}장${gifs ? ` (GIF ${gifs}장 포함)` : ''}` : ''}이 들어 있어요.</span></li>
-      <li><span>압축을 풀고, 카페24 관리자 <b>디자인 &gt; 파일 업로드(또는 FTP)</b>에서 룩북 폴더(index.html이 있는 곳)에 <b>그대로 덮어쓰기</b> 업로드하세요. images 폴더 구조도 그대로 올려야 해요.</span></li>
+      <li><span><b>ZIP 다운로드</b> — victor-lookbook-data.js${news.length ? ` + 새 이미지 ${news.length}장${gifs ? ` (GIF ${gifs}장 포함)` : ''}` : ''}이 들어 있어요.</span></li>
+      <li><span>압축을 풀고, 카페24 관리자 <b>디자인 &gt; 파일 업로드(또는 FTP)</b>에서 룩북 폴더(victor-lookbook.html이 있는 곳)에 <b>그대로 덮어쓰기</b> 업로드하세요. images 폴더 구조도 그대로 올려야 해요.</span></li>
       <li><span>사이트에서 새로고침하면 반영돼요. (최대 5분 걸릴 수 있어요)</span></li>
       <li><span>업로드를 마쳤으면 아래 <b>업로드 완료</b>를 눌러 임시 이미지를 정리하세요.</span></li>
     </ol>
@@ -1413,12 +1413,12 @@ $('#btnExport').onclick = async () => {
   `<button class="btn" id="exJs">데이터 파일만 받기</button>${news.length ? '<button class="btn" id="exDone">업로드 완료</button>' : ''}<button class="btn primary" id="exZip">ZIP 다운로드</button>`,
   d => {
     $('#exZip', d).onclick = () => {
-      const files = [{ name: 'lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
+      const files = [{ name: 'victor-lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
       news.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._file}`, data: dataUrlBytes(l._img) }));
-      download(makeZip(files), `lookbook-update-${stamp()}.zip`);
+      download(makeZip(files), `victor-lookbook-update-${stamp()}.zip`);
       toast('ZIP을 내려받았어요');
     };
-    $('#exJs', d).onclick = () => { download(new Blob([dataJs(buildData(false))], { type: 'text/javascript' }), 'lookbook-data.js'); };
+    $('#exJs', d).onclick = () => { download(new Blob([dataJs(buildData(false))], { type: 'text/javascript' }), 'victor-lookbook-data.js'); };
     const done = $('#exDone', d);
     if (done) done.onclick = () => {
       if (!confirm('카페24에 이미지와 데이터 파일을 모두 올렸나요?\n임시 이미지를 정리하고, 이후엔 업로드된 파일 경로를 사용해요.')) return;
@@ -1466,7 +1466,7 @@ let tt; function toast(m) { const t = $('#toast'); t.textContent = m; t.classLis
 window.addEventListener('beforeunload', e => { if (dirty) { saveNow(false); e.preventDefault(); e.returnValue = ''; } });
 
 (async function init() {
-  if (!window.LOOKBOOK_DATA) $('#banner').innerHTML = `<div class="banner"><span>lookbook-data.js를 찾지 못했어요. admin.html을 index.html과 같은 폴더에 두고 여세요.</span></div>`;
+  if (!window.LOOKBOOK_DATA) $('#banner').innerHTML = `<div class="banner"><span>victor-lookbook-data.js를 찾지 못했어요. victor-admin.html을 victor-lookbook.html과 같은 폴더에 두고 여세요.</span></div>`;
   try {
     const draft = await idb.get('draft');
     if (draft?.D) {
@@ -1474,7 +1474,7 @@ window.addEventListener('beforeunload', e => { if (dirty) { saveNow(false); e.pr
       $('#banner').innerHTML = `<div class="banner"><span>저장해 둔 작업을 불러왔어요 (${new Date(draft.at).toLocaleString('ko-KR')})</span>
         <button class="btn sm" id="resetDraft">사이트 파일 기준으로 다시 시작</button></div>`;
       $('#resetDraft').onclick = async () => {
-        if (!confirm('저장된 작업을 버리고 현재 lookbook-data.js 기준으로 다시 시작할까요?')) return;
+        if (!confirm('저장된 작업을 버리고 현재 victor-lookbook-data.js 기준으로 다시 시작할까요?')) return;
         await idb.del('draft'); D = normalize(clone(SOURCE)); cur = D.lookbooks[0]?.id || null; $('#banner').innerHTML = ''; tried.clear();
         renderTree(); renderMain(); updateTeamBtn(); dirty = false; $('#btnSave').classList.remove('dirty'); toast('다시 불러왔어요');
       };

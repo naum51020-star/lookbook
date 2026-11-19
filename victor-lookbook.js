@@ -2,10 +2,10 @@
    VICTOR LOOKBOOK — 끼워 넣기용 스크립트
    어느 페이지에든 아래 두 줄이면 룩북이 그려집니다.
      <div id="victor-lookbook"></div>
-     <script src="(이 파일 경로)/lookbook.js"></script>
+     <script src="(이 파일 경로)/victor-lookbook.js"></script>
 
    옵션 (div에 data-* 로 지정)
-     data-src        : 데이터 파일 주소 (기본: 이 스크립트와 같은 폴더의 lookbook-data.js)
+     data-src        : 데이터 파일 주소 (기본: 이 스크립트와 같은 폴더의 victor-lookbook-data.js)
      data-pad-top    : 위쪽 여백 px (기본 60)
      data-set-title  : "1"이면 브라우저 탭 제목을 룩북 제목으로 바꿈 (단독 페이지용)
    사이트 스타일과 섞이지 않도록 모든 클래스는 vlb- 로 시작합니다.
@@ -253,7 +253,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
     if (!root || root.__vlb) return root && root.__vlb;
     injectCSS();
     const o = {
-      src: opts.src || root.dataset.src || new URL('lookbook-data.js', SCRIPT_BASE).href,
+      src: opts.src || root.dataset.src || new URL('victor-lookbook-data.js', SCRIPT_BASE).href,
       padTop: opts.padTop ?? root.dataset.padTop,
       setTitle: opts.setTitle ?? root.dataset.setTitle === '1',
       useHash: opts.useHash ?? root.dataset.useHash !== '0',
@@ -381,7 +381,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
         vids.forEach(v => io.observe(v));
       }
     }
-    /* 단체복 시뮬레이션: 칩을 누를 때만 teamwear.js 를 불러옴 (평소 룩북은 가볍게) */
+    /* 단체복 시뮬레이션: 칩을 누를 때만 victor-teamwear.js 를 불러옴 (평소 룩북은 가볍게) */
     const teamOn = () => (DATA.teamwear || {}).enabled !== false;
     let teamLoading = null;
     function openTeam() {
@@ -391,11 +391,11 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       if (window.VictorTeamwear) return go();
       if (!teamLoading) teamLoading = new Promise((res, rej) => {
         const sc = document.createElement('script');
-        const u = new URL('teamwear.js', SCRIPT_BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
+        const u = new URL('victor-teamwear.js', SCRIPT_BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
         sc.onload = res; sc.onerror = rej; document.head.appendChild(sc);
       });
       el.innerHTML = '<div class="vlb-empty"><p>단체복 시뮬레이션을 불러오는 중…</p><small>TEAMWEAR</small></div>';
-      teamLoading.then(() => { if (el.isConnected) go(); }).catch(() => { teamLoading = null; el.innerHTML = '<div class="vlb-empty"><p>불러오지 못했어요</p><small>teamwear.js</small></div>'; });
+      teamLoading.then(() => { if (el.isConnected) go(); }).catch(() => { teamLoading = null; el.innerHTML = '<div class="vlb-empty"><p>불러오지 못했어요</p><small>victor-teamwear.js</small></div>'; });
     }
     function select({ year, season, bookId }, push = true) {
       const prevBook = state.bookId;
@@ -567,7 +567,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       const u = new URL(o.src, location.href); u.searchParams.set('v', Math.floor(Date.now() / 300000));   // 5분 단위 캐시 무효화
       sc.src = u.href;
       sc.onload = () => { const d = window.LOOKBOOK_DATA; window.LOOKBOOK_DATA = prev; if (!api.previewGot) start(d); };
-      sc.onerror = () => { R.body.innerHTML = '<div class="vlb-empty"><p>룩북 데이터를 불러오지 못했어요</p><small>lookbook-data.js</small></div>'; };
+      sc.onerror = () => { R.body.innerHTML = '<div class="vlb-empty"><p>룩북 데이터를 불러오지 못했어요</p><small>victor-lookbook-data.js</small></div>'; };
       document.head.appendChild(sc);
     }
     const api = {

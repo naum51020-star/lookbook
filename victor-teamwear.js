@@ -94,9 +94,9 @@
     const done = (D) => build(root, D, shareUrl);
     if (window.TEAMWEAR_DATA) return done(window.TEAMWEAR_DATA);
     const sc = document.createElement('script');
-    const u = new URL(opts.dataSrc || 'teamwear-data.js', BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
+    const u = new URL(opts.dataSrc || 'victor-teamwear-data.js', BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
     sc.onload = () => done(window.TEAMWEAR_DATA || { models: [], garments: [], layers: {} });
-    sc.onerror = () => { root.innerHTML = '<div class="vtw-empty">단체복 데이터를 불러오지 못했어요 (teamwear-data.js)</div>'; };
+    sc.onerror = () => { root.innerHTML = '<div class="vtw-empty">단체복 데이터를 불러오지 못했어요 (victor-teamwear-data.js)</div>'; };
     document.head.appendChild(sc);
   }
 

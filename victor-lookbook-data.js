@@ -1,9 +1,9 @@
 /* =====================================================================
    VICTOR LOOKBOOK — 데이터 파일
-   새 시즌/룩북은 이 파일에만 추가하면 됩니다. (index.html은 건드릴 필요 없음)
+   새 시즌/룩북은 이 파일에만 추가하면 됩니다. (victor-lookbook.html은 건드릴 필요 없음)
 
    ▸ 룩북 추가: lookbooks 배열 맨 앞에 객체 하나 추가 (맨 앞일수록 탭에서 먼저 보임)
-       id      : 주소에 쓰이는 고유값 (영문/숫자/-)  → index.html#2026-korea-open
+       id      : 주소에 쓰이는 고유값 (영문/숫자/-)  → victor-lookbook.html#2026-korea-open
        year    : 2026
        season  : 'SS' 또는 'FW'
        title   : 탭과 제목에 보이는 이름 (영어)
@@ -19,7 +19,7 @@ window.LOOKBOOK_DATA = {
   /* 디자인: radius = 시트의 옵션선택·장바구니 버튼·상품 썸네일 모서리(px), roundLooks = 룩 썸네일 테두리에도 적용, maxWidth = 콘텐츠 최대 폭(px) */
   design: { radius: 8, roundLooks: false, maxWidth: 1200 },
 
-  /* 단체복 시뮬레이션 섹션 (룩북 카테고리 줄의 "단체복 NEW") — false 면 숨김. 단체복 목록은 teamwear-data.js */
+  /* 단체복 시뮬레이션 섹션 (룩북 카테고리 줄의 "단체복 NEW") — false 면 숨김. 단체복 목록은 victor-teamwear-data.js */
   teamwear: { enabled: true },
 
   seasons: [
