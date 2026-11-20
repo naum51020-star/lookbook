@@ -34,9 +34,9 @@
 | `victor-teamwear-data.js` | 여자/남자 룩 목록, 허리선 위치, 상의·하의 아이콘·이름, 남녀 같은 상의 짝 |
 | `sim/looks/` | 배경을 지운 룩 사진(720x1720) + `icons/` 상의·하의 아이콘 |
 | `sim/spofl-wm.png` | 워터마크 로고 |
-| `tools/make_looks.py` | (선택) 사진을 한꺼번에 처리할 때 쓰는 스크립트. 평소엔 관리자 [단체복 옷]에서 추가 |
+| `tools/make_looks.py` | 새 룩 사진을 같은 크기로 자르고 허리선 찾기 |
 
-- 관리자 **[단체복 옷]**: 룩 추가(룩 사진 + 상의/하의 누끼 → 배경 자동 제거·위치 맞춤), 허리선, 상품명, 남녀 같은 상의, 순서, 삭제 → 내보내기 ZIP에 데이터·사진 포함
+- 단체복 옷(룩 사진·아이콘·상품명)은 구글 드라이브에 올린 뒤 개발 담당(Claude)에게 요청해서 `victor-teamwear-data.js`·`sim/looks/`에 반영
 - 관리자에서 룩북마다 **"이 룩북에 단체복 NEW 섹션 보이기"** 체크 (체크한 룩북에만 보임)
 - 공유 링크: `victor-lookbook.html#teamwear`
 - 단체복 문의 버튼: 페이지에 `window.LOOKBOOK_TEAMWEAR_ASK_URL = '/문의주소'`

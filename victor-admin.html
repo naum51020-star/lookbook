@@ -93,24 +93,6 @@
   .cat-chip:hover{border-color:#bbb}
   .cat-chip.on{background:#111;border-color:#111;color:#fff}
   .cat-chip.on span{color:#bbb}
-  /* 단체복 옷 */
-  .tw-list{display:flex;flex-direction:column;gap:12px}
-  .tw-card{display:grid;grid-template-columns:150px 1fr;gap:16px;border:1px solid var(--line);border-radius:12px;padding:12px}
-  .tw-photo{position:relative;aspect-ratio:720/1720;background:#f1f1ef;border-radius:8px;overflow:hidden;display:grid;place-items:center;font-size:12px;color:#999}
-  .tw-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-  .tw-hem{position:absolute;left:0;right:0;height:0;border-top:2px solid #e53;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
-  .tw-body{display:flex;flex-direction:column;gap:10px;min-width:0}
-  .tw-row{display:flex;align-items:center;gap:6px}
-  .tw-row .grow{flex:1}
-  .tw-parts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .tw-part{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start;background:var(--soft);border-radius:10px;padding:10px}
-  .tw-part .f{margin-bottom:6px}
-  .tw-ic{width:72px;height:72px;border-radius:8px;background:#fff;display:grid;place-items:center;font-size:11px;color:#aaa;overflow:hidden}
-  .tw-ic img{max-width:100%;max-height:100%}
-  .tw-mini{margin-bottom:6px}
-  .tw-add{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;padding:14px;border:1.5px dashed #c9c9c4;border-radius:12px}
-  .tw-add .hint{flex:1;min-width:140px}
-  #twTabs button{min-width:110px}
   /* 사이드바: 룩북 아래 하위 카테고리 */
   .subcats{margin:2px 0 6px 10px;border-left:1px solid var(--line);padding-left:6px}
   .subcat{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:6px 10px;border-radius:var(--r);font-size:12.5px;color:#555}
@@ -239,12 +221,11 @@
 <body>
 
 <header class="top">
-  <h1>VICTOR LOOKBOOK<span>관리자 · v20261120-tw</span></h1>
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261119-gal</span></h1>
   <div class="top-actions">
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
     <button class="btn" id="btnNames">상품 목록</button>
-    <button class="btn" id="btnTw">단체복 옷</button>
     <button class="btn" id="btnGal">단체복 갤러리</button>
     <button class="btn" id="btnDesign">디자인</button>
     <button class="btn" id="btnPreview">미리보기</button>
@@ -291,7 +272,6 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="victor-lookbook-data.js"></script>
-<script src="victor-teamwear-data.js"></script>
 <script>
 /* =====================================================================
    룩북 관리자 — 편집 → [저장] → [내보내기] → ZIP을 카페24 룩북 폴더에 업로드
@@ -396,8 +376,7 @@ let cur = null;
 
 function normalize(d) {
   d.design = { radius: 8, roundLooks: false, maxWidth: 1200, ...(d.design || {}) };
-  d.teamwear = { enabled: true, boardNo: 0, hidden: [], ...(d.teamwear || {}) };
-  if (!d.tw) d.tw = normTW(window.TEAMWEAR_DATA && JSON.parse(JSON.stringify(window.TEAMWEAR_DATA)));   // 단체복 옷 (victor-teamwear-data.js)            // 단체복 시뮬레이션 섹션 보이기/숨기기
+  d.teamwear = { enabled: true, boardNo: 0, hidden: [], ...(d.teamwear || {}) };            // 단체복 시뮬레이션 섹션 보이기/숨기기
   delete d.design.ratio;                 // 비율은 3:4 고정 (예전 저장본에 남은 값 정리)
   d.seasons = d.seasons || [{ key: 'SS', label: 'SPRING/SUMMER' }, { key: 'FW', label: 'FALL/WINTER' }];
   d.lookbooks = d.lookbooks || [];
@@ -1274,199 +1253,6 @@ function autofillAll() {
 
 /* 디자인 */
 /* 단체복 시뮬레이션 섹션 보이기/숨기기 (단체복 목록은 관리자에 넣지 않음 → 가볍게) */
-/* =====================================================================
-   단체복 옷 (룩 사진 · 상의/하의 아이콘 · 상품명) — victor-teamwear-data.js 를 편집
-   ===================================================================== */
-const TW_CV = { w: 720, h: 1720, shoulderY: 300 };
-function normTW(src) {
-  const P = (src && src.people) || {};
-  const one = (l) => ({ id: l.id, photo: l.photo || '', hem: +l.hem || 840,
-    top: l.top ? { name: l.top.name || '', icon: l.top.icon || '', pair: l.top.pair || '' } : null,
-    bottom: l.bottom ? { name: l.bottom.name || '', icon: l.bottom.icon || '' } : null,
-    bottomSameAs: l.bottomSameAs || '' });
-  return { F: (P.F || []).map(one), M: (P.M || []).map(one) };
-}
-const TW_SOURCE = window.TEAMWEAR_DATA ? JSON.parse(JSON.stringify(window.TEAMWEAR_DATA)) : null;
-const twSrc = (x) => x && (x._data || x.photo || x.icon) || '';
-function twUsedId(id) { return ['F', 'M'].some(g => D.tw[g].some(l => l.id === id)); }
-function twNewId(g) { let n = D.tw[g].length + 1, id; do { id = `${g.toLowerCase()}${n++}`; } while (twUsedId(id)); return id; }
-
-// 룩 사진 처리: 단색 스튜디오 배경을 테두리에서부터 지우고, 사람 크기·위치를 기존 룩과 같게 맞춤
-async function twProcessPhoto(file) {
-  const bmp = await createImageBitmap(file);
-  const H0 = 1400, s0 = H0 / bmp.height, W0 = Math.round(bmp.width * s0);
-  const c = document.createElement('canvas'); c.width = W0; c.height = H0;
-  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0, W0, H0);
-  const img = x.getImageData(0, 0, W0, H0), d = img.data, N = W0 * H0;
-  // 배경색 = 테두리 픽셀 평균
-  let r = 0, g = 0, b = 0, n = 0;
-  const addPx = (i) => { r += d[i * 4]; g += d[i * 4 + 1]; b += d[i * 4 + 2]; n++; };
-  for (let i = 0; i < W0; i += 4) { addPx(i); addPx((H0 - 1) * W0 + i); }
-  for (let y = 0; y < H0; y += 4) { addPx(y * W0); addPx(y * W0 + W0 - 1); }
-  r /= n; g /= n; b /= n;
-  const near = (i, t) => { const dr = d[i * 4] - r, dg = d[i * 4 + 1] - g, db = d[i * 4 + 2] - b; return dr * dr + dg * dg + db * db < t * t; };
-  const bg = new Uint8Array(N), q = new Int32Array(N); let qh = 0, qt = 0;
-  const push = (i) => { if (!bg[i] && near(i, 30)) { bg[i] = 1; q[qt++] = i; } };
-  for (let i = 0; i < W0; i++) { push(i); push((H0 - 1) * W0 + i); }
-  for (let y = 0; y < H0; y++) { push(y * W0); push(y * W0 + W0 - 1); }
-  while (qh < qt) { const i = q[qh++], px = i % W0; if (px > 0) push(i - 1); if (px < W0 - 1) push(i + 1); if (i >= W0) push(i - W0); if (i < N - W0) push(i + W0); }
-  // 바닥 그림자(배경보다 살짝 어두운 부분)도 배경으로
-  let top = H0, bot = 0, left = W0, right = 0;
-  for (let i = 0; i < N; i++) {
-    if (!bg[i] && near(i, 55) && i > N * 0.85) bg[i] = 1;
-    if (bg[i]) d[i * 4 + 3] = 0;
-    else { const y = (i / W0) | 0, px = i % W0; if (y < top) top = y; if (y > bot) bot = y; if (px < left) left = px; if (px > right) right = px; }
-  }
-  if (bot <= top) throw new Error('사람을 찾지 못했어요');
-  x.putImageData(img, 0, 0);
-  // 가장자리 부드럽게
-  const soft = document.createElement('canvas'); soft.width = W0; soft.height = H0;
-  const sx = soft.getContext('2d'); sx.filter = 'blur(0.8px)'; sx.drawImage(c, 0, 0);
-  // 기존 룩과 같은 틀(720x1720): 머리 꼭대기 72px, 발끝 1655px, 몸 가운데 정렬
-  const out = document.createElement('canvas'); out.width = TW_CV.w; out.height = TW_CV.h;
-  const k = (1655 - 72) / (bot - top), cx = (left + right) / 2;
-  out.getContext('2d').drawImage(soft, 0, 0, W0, H0, TW_CV.w / 2 - cx * k, 72 - top * k, W0 * k, H0 * k);
-  return out.toDataURL('image/webp', 0.88);
-}
-async function twProcessIcon(file) {
-  const bmp = await createImageBitmap(file);
-  const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(bmp, 0, 0);
-  const d = x.getImageData(0, 0, c.width, c.height).data; let t = c.height, bo = 0, l = c.width, ri = 0;
-  for (let y = 0; y < c.height; y += 2) for (let px = 0; px < c.width; px += 2) if (d[(y * c.width + px) * 4 + 3] > 20) { if (y < t) t = y; if (y > bo) bo = y; if (px < l) l = px; if (px > ri) ri = px; }
-  if (bo <= t) { t = 0; l = 0; bo = c.height - 1; ri = c.width - 1; }
-  const w = ri - l + 1, h = bo - t + 1, s = Math.min(1, 360 / Math.max(w, h));
-  const o = document.createElement('canvas'); o.width = Math.round(w * s); o.height = Math.round(h * s);
-  o.getContext('2d').drawImage(c, l, t, w, h, 0, 0, o.width, o.height);
-  return o.toDataURL('image/webp', 0.86);
-}
-
-let twTab = 'F';
-function openTeamwearClothes() {
-  const offline = location.protocol === 'file:';
-  const card = (l, i, list) => {
-    const g = twTab, other = g === 'F' ? 'M' : 'F';
-    const pairOpts = `<option value="">없음</option>` + D.tw[other].filter(o => o.top).map(o => `<option value="${esc(o.id)}" ${l.top && l.top.pair === o.id ? 'selected' : ''}>${esc(o.top.name || o.id)}</option>`).join('');
-    const sameOpts = `<option value="">이 룩의 하의 사용</option>` + list.filter(o => o !== l && o.bottom).map(o => `<option value="${esc(o.id)}" ${l.bottomSameAs === o.id ? 'selected' : ''}>${esc(o.bottom.name || o.id)}와 같은 하의</option>`).join('');
-    return `<div class="tw-card" data-tw="${i}">
-      <div class="tw-photo">${twSrc(l) ? `<img src="${esc(twSrc(l))}" alt="">` : '<span>사진 없음</span>'}<i class="tw-hem" style="top:${(l.hem / TW_CV.h * 100).toFixed(2)}%"></i></div>
-      <div class="tw-body">
-        <div class="tw-row"><b>${esc(l.id.toUpperCase())}</b>${l._data ? '<span class="tag" style="background:var(--ok);color:#fff">새 사진</span>' : ''}<span class="grow"></span>
-          <button class="btn sm icon" data-twact="up" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn sm icon" data-twact="down" ${i === list.length - 1 ? 'disabled' : ''}>↓</button>
-          <label class="btn sm">사진 교체<input type="file" accept="image/*" data-twfile="photo" hidden></label><button class="btn sm danger" data-twact="del">삭제</button></div>
-        <label class="f"><span>허리선 (상의가 끝나는 곳 — 빨간 선을 상의 끝에 맞추세요)</span><input type="range" min="500" max="1300" value="${l.hem}" data-twf="hem"></label>
-        <div class="tw-parts">
-          <div class="tw-part"><span class="tw-ic">${l.top && twSrc(l.top) ? `<img src="${esc(twSrc(l.top))}">` : '상의'}</span>
-            <div><label class="f"><span>상의 이름</span><input type="text" data-twf="topName" value="${esc(l.top ? l.top.name : '')}" placeholder="상품명"></label>
-            <div class="tw-mini"><label class="btn sm">아이콘 올리기<input type="file" accept="image/*" data-twfile="topIcon" hidden></label></div>
-            <label class="f"><span>남녀 같은 상의</span><select data-twf="pair">${pairOpts}</select></label></div></div>
-          <div class="tw-part"><span class="tw-ic">${l.bottom && twSrc(l.bottom) ? `<img src="${esc(twSrc(l.bottom))}">` : '하의'}</span>
-            <div><label class="f"><span>하의</span><select data-twf="same">${sameOpts}</select></label>
-            ${l.bottomSameAs ? '' : `<label class="f"><span>하의 이름</span><input type="text" data-twf="bottomName" value="${esc(l.bottom ? l.bottom.name : '')}" placeholder="상품명"></label>
-            <div class="tw-mini"><label class="btn sm">아이콘 올리기<input type="file" accept="image/*" data-twfile="bottomIcon" hidden></label></div>`}</div></div>
-        </div>
-      </div></div>`;
-  };
-  const body = () => `
-    <div class="seg" id="twTabs"><button data-g="F" class="${twTab === 'F' ? 'on' : ''}">여자 (${D.tw.F.length})</button><button data-g="M" class="${twTab === 'M' ? 'on' : ''}">남자 (${D.tw.M.length})</button></div>
-    <p class="hint" style="margin:10px 0 14px">같은 모델·같은 포즈·같은 단색 배경으로 찍은 룩 사진을 올리면 배경을 지우고 위치를 맞춰요. 상의·하의 아이콘은 누끼(투명 배경) PNG를 올려 주세요.</p>
-    <div class="tw-list">${D.tw[twTab].map((l, i, a) => card(l, i, a)).join('') || '<p class="hint">아직 룩이 없어요.</p>'}</div>
-    <div class="tw-add"><b>+ ${twTab === 'F' ? '여자' : '남자'} 룩 추가</b>
-      <label class="btn sm">① 룩 사진<input type="file" accept="image/*" id="twNewPhoto" hidden></label>
-      <label class="btn sm">② 상의 누끼<input type="file" accept="image/*" id="twNewTop" hidden></label>
-      <label class="btn sm">③ 하의 누끼<input type="file" accept="image/*" id="twNewBottom" hidden></label>
-      <span class="hint" id="twNewState">사진 3개를 고른 뒤 [추가]</span><button class="btn primary sm" id="twNewOk">추가</button></div>`;
-  openDialog('단체복 옷 (룩 사진 · 상의/하의)', `<div id="twBox">${body()}</div>`, `<span class="hint grow">바꾼 내용은 미리보기에 바로 보이고, [내보내기] 후 업로드하면 사이트에 반영돼요.</span><button class="btn primary" data-x>완료</button>`, dlg => {
-    const re = () => { $('#twBox', dlg).innerHTML = body(); bindNew(); };
-    const newF = {};
-    const bindNew = () => {
-      const st = () => { $('#twNewState', dlg).textContent = ['photo', 'top', 'bottom'].map(k => (newF[k] ? '✓' : '·') + { photo: '사진', top: '상의', bottom: '하의' }[k]).join('  '); };
-      [['twNewPhoto', 'photo'], ['twNewTop', 'top'], ['twNewBottom', 'bottom']].forEach(([id, k]) => { $('#' + id, dlg).onchange = e => { newF[k] = e.target.files[0]; st(); }; });
-      $('#twNewOk', dlg).onclick = async () => {
-        if (!newF.photo) return toast('룩 사진을 먼저 골라 주세요');
-        const btn = $('#twNewOk', dlg); btn.disabled = true; btn.innerHTML = '<span class="spin"></span>처리 중…';
-        try {
-          const id = twNewId(twTab);
-          const l = { id, photo: '', _data: await twProcessPhoto(newF.photo), hem: 840, top: { name: `${id.toUpperCase()} 상의`, icon: '', pair: '' }, bottom: { name: `${id.toUpperCase()} 하의`, icon: '' }, bottomSameAs: '' };
-          if (newF.top) l.top._data = await twProcessIcon(newF.top);
-          if (newF.bottom) l.bottom._data = await twProcessIcon(newF.bottom);
-          D.tw[twTab].push(l); Object.keys(newF).forEach(k => delete newF[k]);
-          changed({ tree: false }); re(); toast('룩을 추가했어요 · 빨간 허리선을 상의 끝에 맞춰 주세요');
-        } catch (err) { toast('사진을 처리하지 못했어요: ' + (err.message || '')); btn.disabled = false; btn.textContent = '추가'; }
-      };
-    };
-    bindNew();
-    const lookOf = (el) => D.tw[twTab][+el.closest('[data-tw]').dataset.tw];
-    dlg.addEventListener('click', e => {
-      const t = e.target.closest('#twTabs [data-g]'); if (t) { twTab = t.dataset.g; re(); return; }
-      const a = e.target.closest('[data-twact]'); if (!a) return;
-      const list = D.tw[twTab], i = +a.closest('[data-tw]').dataset.tw, l = list[i];
-      if (a.dataset.twact === 'del') {
-        if (!confirm(`${l.id.toUpperCase()} 룩을 삭제할까요?`)) return;
-        list.splice(i, 1);
-        ['F', 'M'].forEach(g => D.tw[g].forEach(o => { if (o.top && o.top.pair === l.id) o.top.pair = ''; if (o.bottomSameAs === l.id) { o.bottomSameAs = ''; o.bottom = o.bottom || { name: '', icon: '' }; } }));
-      } else { const j = i + (a.dataset.twact === 'up' ? -1 : 1); [list[i], list[j]] = [list[j], list[i]]; }
-      changed({ tree: false }); re();
-    });
-    dlg.addEventListener('input', e => {
-      const f = e.target.dataset.twf; if (!f) return; const l = lookOf(e.target);
-      if (f === 'hem') { l.hem = +e.target.value; e.target.closest('[data-tw]').querySelector('.tw-hem').style.top = (l.hem / TW_CV.h * 100).toFixed(2) + '%'; }
-      if (f === 'topName') { l.top = l.top || { name: '', icon: '' }; l.top.name = e.target.value; }
-      if (f === 'bottomName') { l.bottom = l.bottom || { name: '', icon: '' }; l.bottom.name = e.target.value; }
-      changed({ tree: false });
-    });
-    dlg.addEventListener('change', async e => {
-      const f = e.target.dataset.twf, ff = e.target.dataset.twfile; if (!f && !ff) return; const l = lookOf(e.target);
-      if (f === 'pair') {
-        const old = l.top.pair, other = twTab === 'F' ? 'M' : 'F';
-        if (old) { const o = D.tw[other].find(x => x.id === old); if (o && o.top && o.top.pair === l.id) o.top.pair = ''; }
-        l.top.pair = e.target.value; const o = D.tw[other].find(x => x.id === l.top.pair); if (o && o.top) o.top.pair = l.id;   // 짝은 양쪽에 같이
-      }
-      if (f === 'same') { l.bottomSameAs = e.target.value; if (!l.bottomSameAs && !l.bottom) l.bottom = { name: `${l.id.toUpperCase()} 하의`, icon: '' }; re(); }
-      if (ff) {
-        const file = e.target.files[0]; if (!file) return;
-        try {
-          if (ff === 'photo') { l._data = await twProcessPhoto(file); }
-          if (ff === 'topIcon') { l.top = l.top || { name: '', icon: '' }; l.top._data = await twProcessIcon(file); }
-          if (ff === 'bottomIcon') { l.bottom = l.bottom || { name: '', icon: '' }; l.bottom._data = await twProcessIcon(file); }
-          re(); toast('바꿨어요');
-        } catch { toast('이미지를 처리하지 못했어요'); }
-      }
-      changed({ tree: false });
-    });
-  }, true);
-}
-// 사이트용 데이터 (미리보기면 새 사진은 data URL 그대로)
-function twBuild(forPreview) {
-  const files = [], P = {};
-  ['F', 'M'].forEach(g => {
-    P[g] = D.tw[g].map(l => {
-      const o = { id: l.id, photo: l.photo, hem: l.hem };
-      if (l._data) { o.photo = forPreview ? l._data : `sim/looks/${l.id}.webp`; if (!forPreview) files.push({ name: o.photo, url: l._data, set: () => { l.photo = o.photo; delete l._data; } }); }
-      if (l.top) {
-        o.top = { name: l.top.name, icon: l.top.icon }; if (l.top.pair) o.top.pair = l.top.pair;
-        if (l.top._data) { o.top.icon = forPreview ? l.top._data : `sim/looks/icons/${l.id}-top.webp`; if (!forPreview) files.push({ name: o.top.icon, url: l.top._data, set: () => { l.top.icon = o.top.icon; delete l.top._data; } }); }
-      }
-      if (l.bottomSameAs) o.bottomSameAs = l.bottomSameAs;
-      else if (l.bottom) {
-        o.bottom = { name: l.bottom.name, icon: l.bottom.icon };
-        if (l.bottom._data) { o.bottom.icon = forPreview ? l.bottom._data : `sim/looks/icons/${l.id}-bottom.webp`; if (!forPreview) files.push({ name: o.bottom.icon, url: l.bottom._data, set: () => { l.bottom.icon = o.bottom.icon; delete l.bottom._data; } }); }
-      }
-      return o;
-    });
-  });
-  return { data: { canvas: TW_CV, people: P }, files };
-}
-function twDataJs(data) {
-  return `/* =====================================================================
-   VICTOR 단체복 시뮬레이션 — 데이터 (victor-admin.html [단체복 옷]에서 자동 생성: ${new Date().toLocaleString('ko-KR')})
-   같은 모델·같은 포즈로 찍은 룩 사진을 허리선(hem)에서 나눠, 고른 상의 룩 윗부분 + 하의 룩 아랫부분을 이어 붙여 보여줍니다.
-   ===================================================================== */
-window.TEAMWEAR_DATA = ${JSON.stringify(data, null, 2)};
-`;
-}
-
-$('#btnTw').onclick = openTeamwearClothes;
-
 /* 단체복 갤러리: 사람들이 올린 조합 보기 · 사이트에서 숨기기 (완전 삭제는 카페24 관리자 게시판에서) */
 $('#btnGal').onclick = () => {
   const T = D.teamwear; T.hidden = T.hidden || [];
@@ -1526,7 +1312,7 @@ $('#btnDesign').onclick = () => {
    미리보기
    ===================================================================== */
 let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
-const LOOKBOOK_JS_MIN = '20261120-twadmin';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
+const LOOKBOOK_JS_MIN = '20261119-gal';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
 const frameWin = () => $('#pvFrame').contentWindow;
 function sendPreview(keepScroll) {
   try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
@@ -1612,8 +1398,7 @@ function buildData(forPreview) {
   });
   const products = {};
   [...used].sort((a, b) => a - b).forEach(n => { if (D.products[n]) products[n] = D.products[n]; });
-  const tw = forPreview ? { teamwearData: twBuild(true).data } : {};
-  return { ...tw, design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false, boardNo: +D.teamwear.boardNo || 0, hidden: [...new Set((D.teamwear.hidden || []).map(Number))] }, seasons: clone(D.seasons), lookbooks, products };
+  return { design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false, boardNo: +D.teamwear.boardNo || 0, hidden: [...new Set((D.teamwear.hidden || []).map(Number))] }, seasons: clone(D.seasons), lookbooks, products };
 }
 function dataJs(data) {
   return `/* =====================================================================
@@ -1667,8 +1452,6 @@ $('#btnExport').onclick = async () => {
     $('#exZip', d).onclick = () => {
       const files = [{ name: 'victor-lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
       news.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._file}`, data: dataUrlBytes(l._img) }));
-      const tw = twBuild(false); files.push({ name: 'victor-teamwear-data.js', data: new TextEncoder().encode(twDataJs(tw.data)) });
-      tw.files.forEach(f => files.push({ name: f.name, data: dataUrlBytes(f.url) }));
       download(makeZip(files), `victor-lookbook-update-${stamp()}.zip`);
       toast('ZIP을 내려받았어요');
     };
@@ -1677,7 +1460,6 @@ $('#btnExport').onclick = async () => {
     if (done) done.onclick = () => {
       if (!confirm('카페24에 이미지와 데이터 파일을 모두 올렸나요?\n임시 이미지를 정리하고, 이후엔 업로드된 파일 경로를 사용해요.')) return;
       news.forEach(({ b, l }) => { l.image = `images/${b.id}/${l._file}`; delete l._img; delete l._file; });
-      twBuild(false).files.forEach(f => f.set());
       d.close(); changed({ main: true }); saveNow(false); toast('정리했어요');
     };
   });
