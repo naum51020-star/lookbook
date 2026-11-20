@@ -127,6 +127,7 @@
     root.innerHTML = '<div class="vtw-empty" style="text-align:center;padding:60px 0">단체복 시뮬레이션을 불러오는 중…</div>';
     const shareUrl = opts.shareUrl || (location.origin + location.pathname + location.search + '#teamwear');
     const done = (D) => build(root, D, shareUrl, opts.gallery || {});
+    if (opts.data) return done(opts.data);                  // 관리자 미리보기: 편집 중인 단체복 데이터
     if (window.TEAMWEAR_DATA) return done(window.TEAMWEAR_DATA);
     const sc = document.createElement('script');
     const u = new URL(opts.dataSrc || 'victor-teamwear-data.js', BASE); u.searchParams.set('v', Math.floor(Date.now() / 300000)); sc.src = u.href;
@@ -219,6 +220,11 @@
         const gr = tx.createLinearGradient(0, seam - 8, 0, seam + 8);
         gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         tx.globalCompositeOperation = 'destination-in'; tx.fillStyle = gr; tx.fillRect(0, 0, cw, ch);
+        // 아래 룩의 윗부분(다른 상의)은 지우고 → 위 룩 상의가 더 좁아도 옆구리에 다른 옷이 비치지 않음
+        const er = x.createLinearGradient(0, seam - 8, 0, seam + 8);
+        er.addColorStop(0, 'rgba(0,0,0,1)'); er.addColorStop(1, 'rgba(0,0,0,0)');
+        x.globalCompositeOperation = 'destination-out'; x.fillStyle = er; x.fillRect(0, 0, cw, seam + 8);
+        x.globalCompositeOperation = 'source-over';
         x.drawImage(t, 0, 0);
       }
       mix.set(key, c); return c;

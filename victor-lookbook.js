@@ -14,7 +14,7 @@
   'use strict';
   if (window.VictorLookbook) return;
 
-  const VERSION = '20261119-gal';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
+  const VERSION = '20261120-twadmin';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
   const SCRIPT = document.currentScript;
   const SCRIPT_BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
 
@@ -345,7 +345,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       const shown = looks.map((l, i) => [l, i]).filter(([l]) => state.cat === 'all' || l.category === state.cat);
 
       // 썸네일 구성이 그대로면 다시 그리지 않음 (이미지 재로딩·깜빡임 방지)
-      const sig = JSON.stringify([state.bookId, state.cat, title, shown.map(([l, i]) => [i, l.imageKey || (typeof l.image === 'string' ? l.image : ''), l.video || '', (l.products || []).length > 0])]);
+      const sig = JSON.stringify([state.bookId, state.cat, state.cat === 'team' ? JSON.stringify(DATA.teamwearData || '').length + JSON.stringify(DATA.teamwear || '') : '', title, shown.map(([l, i]) => [i, l.imageKey || (typeof l.image === 'string' ? l.image : ''), l.video || '', (l.products || []).length > 0])]);
       if (sig === R.body.__sig) return;
       R.body.__sig = sig;
       if (gifIO) { gifIO.disconnect(); gifIO = null; }
@@ -387,7 +387,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
     function openTeam() {
       R.body.innerHTML = '<div class="vlb-team"></div>';
       const el = R.body.firstElementChild;
-      const go = () => window.VictorTeamwear.mount(el, { shareUrl: location.origin + location.pathname + location.search + '#teamwear', gallery: DATA.teamwear || {} });
+      const go = () => window.VictorTeamwear.mount(el, { shareUrl: location.origin + location.pathname + location.search + '#teamwear', gallery: DATA.teamwear || {}, data: DATA.teamwearData });
       if (window.VictorTeamwear) return go();
       if (!teamLoading) teamLoading = new Promise((res, rej) => {
         const sc = document.createElement('script');
