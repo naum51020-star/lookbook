@@ -317,10 +317,10 @@
     let wmTile = null;                                       // 회색 SPOFL 로고 (한 번 만들어 재사용)
     function watermark() {
       const wm = ready.get('wm');
-      if (wm && !wmTile) { const t = document.createElement('canvas'); t.width = wm.width; t.height = wm.height; const tx = t.getContext('2d'); tx.drawImage(wm, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#8c8c8c'; tx.fillRect(0, 0, t.width, t.height); wmTile = t; }
+      if (wm && !wmTile) { const t = document.createElement('canvas'); t.width = wm.width; t.height = wm.height; const tx = t.getContext('2d'); tx.drawImage(wm, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#a0a0a0'; tx.fillRect(0, 0, t.width, t.height); wmTile = t; }
       if (wmTile) {
         const ww = 170, wh = wmTile.height * (ww / wmTile.width), sx = 300, sy = 190;
-        ctx.save(); ctx.globalAlpha = 0.5; ctx.translate(W / 2, H / 2); ctx.rotate(-20 * Math.PI / 180);
+        ctx.save(); ctx.globalAlpha = 0.22; ctx.translate(W / 2, H / 2); ctx.rotate(-20 * Math.PI / 180);
         for (let y = -H, r = 0; y < H; y += sy, r++) for (let x = -W - (r % 2) * sx / 2; x < W; x += sx) ctx.drawImage(wmTile, x, y, ww, wh);
         ctx.restore();
       }
