@@ -223,7 +223,7 @@
 <body>
 
 <header class="top">
-  <h1>VICTOR LOOKBOOK<span>관리자 · v20261123-hover</span></h1>
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261123-sync</span></h1>
   <div class="top-actions">
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
@@ -273,7 +273,7 @@
 </aside>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="victor-lookbook-data.js"></script>
+<script>/* 데이터 파일은 항상 최신으로 (브라우저가 예전 파일을 기억하지 않게) */ document.write('<script src="victor-lookbook-data.js?v=' + Date.now() + '"><\/script>');</script>
 <script>
 /* =====================================================================
    룩북 관리자 — 편집 → [저장] → [내보내기] → ZIP을 카페24 룩북 폴더에 업로드
@@ -1414,7 +1414,7 @@ function buildData(forPreview) {
   });
   const products = {};
   [...used].sort((a, b) => a - b).forEach(n => { if (D.products[n]) products[n] = D.products[n]; });
-  return { design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false, boardNo: +D.teamwear.boardNo || 0, hidden: [...new Set((D.teamwear.hidden || []).map(Number))] }, seasons: clone(D.seasons), lookbooks, products };
+  return { exportedAt: Date.now(), design: { ...D.design }, teamwear: { enabled: D.teamwear.enabled !== false, boardNo: +D.teamwear.boardNo || 0, hidden: [...new Set((D.teamwear.hidden || []).map(Number))] }, seasons: clone(D.seasons), lookbooks, products };
 }
 function dataJs(data) {
   return `/* =====================================================================
@@ -1525,9 +1525,15 @@ window.addEventListener('beforeunload', e => { if (dirty) { saveNow(false); e.pr
   if (!window.LOOKBOOK_DATA) $('#banner').innerHTML = `<div class="banner"><span>victor-lookbook-data.js를 찾지 못했어요. victor-admin.html을 victor-lookbook.html과 같은 폴더에 두고 여세요.</span></div>`;
   try {
     const draft = await idb.get('draft');
-    if (draft?.D) {
+    const fileAt = +(SOURCE.exportedAt || 0), fmt = (t) => new Date(t).toLocaleString('ko-KR');
+    if (draft?.D && fileAt && fileAt > draft.at) {
+      // 사이트에 올라간 파일이 이 브라우저 임시저장보다 최신 → 파일 기준으로 열기 (다른 컴퓨터·다른 사람이 올린 내용 반영)
+      $('#banner').innerHTML = `<div class="banner"><span>사이트에 올라간 파일이 더 최신이라 그 내용을 불러왔어요 (파일 ${fmt(fileAt)} · 이 브라우저 임시저장 ${fmt(draft.at)})</span>
+        <button class="btn sm" id="useDraft">임시저장 내용으로 열기</button></div>`;
+      $('#useDraft').onclick = () => { if (!confirm('이 브라우저에 임시저장된 (더 오래된) 내용으로 열까요?')) return; D = normalize(draft.D); cur = draft.cur; $('#banner').innerHTML = ''; renderTree(); renderMain(); toast('임시저장 내용으로 열었어요'); };
+    } else if (draft?.D) {
       D = normalize(draft.D); cur = draft.cur;
-      $('#banner').innerHTML = `<div class="banner"><span>저장해 둔 작업을 불러왔어요 (${new Date(draft.at).toLocaleString('ko-KR')})</span>
+      $('#banner').innerHTML = `<div class="banner"><span>이 브라우저에 저장해 둔 작업을 불러왔어요 (${fmt(draft.at)})${fileAt ? ` · 사이트 파일 ${fmt(fileAt)}` : ''}</span>
         <button class="btn sm" id="resetDraft">사이트 파일 기준으로 다시 시작</button></div>`;
       $('#resetDraft').onclick = async () => {
         if (!confirm('저장된 작업을 버리고 현재 victor-lookbook-data.js 기준으로 다시 시작할까요?')) return;
