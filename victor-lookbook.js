@@ -14,7 +14,7 @@
   'use strict';
   if (window.VictorLookbook) return;
 
-  const VERSION = '20261120-twadmin';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
+  const VERSION = '20261123-hover';                     // 관리자 미리보기에서 예전 파일인지 확인하는 용도
   const SCRIPT = document.currentScript;
   const SCRIPT_BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
 
@@ -83,6 +83,8 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
 .vlb-shot{position:relative;aspect-ratio:3/4;background:var(--soft);overflow:hidden}
 .vlb-shot img,.vlb-shot video{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;opacity:0;transition:opacity .5s}
 .vlb-shot .ready{opacity:1}
+.vlb-shot .vlb-hov.ready{opacity:0;transition:opacity .35s}
+@media (hover:hover){.vlb-card.has-hov:hover .vlb-shot .vlb-hov.ready{opacity:1}}
 .vlb-cart{position:absolute;right:18px;bottom:18px;width:36px;height:36px;border-radius:50% !important;background:#fff !important;display:grid;place-items:center;box-shadow:0 1px 6px rgba(0,0,0,.14);transition:transform .2s,background .2s,color .2s}
 .vlb-cart:hover{transform:scale(1.08);background:#111 !important;color:#fff}
 .vlb-cart svg{width:16px;height:16px}
@@ -345,7 +347,7 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
       const shown = looks.map((l, i) => [l, i]).filter(([l]) => state.cat === 'all' || l.category === state.cat);
 
       // 썸네일 구성이 그대로면 다시 그리지 않음 (이미지 재로딩·깜빡임 방지)
-      const sig = JSON.stringify([state.bookId, state.cat, state.cat === 'team' ? JSON.stringify(DATA.teamwearData || '').length + JSON.stringify(DATA.teamwear || '') : '', title, shown.map(([l, i]) => [i, l.imageKey || (typeof l.image === 'string' ? l.image : ''), l.video || '', (l.products || []).length > 0])]);
+      const sig = JSON.stringify([state.bookId, state.cat, state.cat === 'team' ? JSON.stringify(DATA.teamwearData || '').length + JSON.stringify(DATA.teamwear || '') : '', title, shown.map(([l, i]) => [i, l.imageKey || (typeof l.image === 'string' ? l.image : ''), l.video || '', l.hoverOn !== false && l.hover ? String(l.hover).length + (l.hoverKey || '') : '', (l.products || []).length > 0])]);
       if (sig === R.body.__sig) return;
       R.body.__sig = sig;
       if (gifIO) { gifIO.disconnect(); gifIO = null; }
@@ -359,12 +361,14 @@ html.vlb-lock,html.vlb-lock body{overflow:hidden}
           : isGif
             ? `<img data-gif="${esc(img)}" alt="${esc(title)} LOOK ${n}" decoding="async">`      // GIF는 화면 근처에 있을 때만 재생 (렉 방지)
             : `<img src="${esc(img)}" alt="${esc(title)} LOOK ${n}" loading="${k < 8 ? 'eager' : 'lazy'}" decoding="async">`;
+        // 호버 사진: 관리자에서 켠 룩만 — 마우스를 올리면 다른 사진으로 바뀜 (터치 기기는 그대로)
+        const hov = !l.video && l.hover && l.hoverOn !== false ? `<img class="vlb-hov" src="${esc(resolveAsset(l.hover, l.hoverKey))}" alt="" loading="lazy" decoding="async" aria-hidden="true">` : '';
         // 연결된 상품이 없는 룩은 장바구니 버튼을 숨김
         const cart = (l.products || []).length ? `<button type="button" class="vlb-cart" data-look="${i}" aria-label="LOOK ${n} 상품 보기">${ICON_BAG}</button>` : '';
-        return `<figure class="vlb-card"><div class="vlb-frame"><div class="vlb-shot">${media}</div>${cart}</div>
+        return `<figure class="vlb-card${hov ? ' has-hov' : ''}"><div class="vlb-frame"><div class="vlb-shot">${media}${hov}</div>${cart}</div>
           <figcaption class="vlb-cap">LOOK ${n}</figcaption></figure>`;
       }).join('')}</div>`;
-      R.body.querySelectorAll('.vlb-shot img').forEach(img => { const show = () => img.classList.add('ready'); img.complete && img.naturalWidth ? show() : img.addEventListener('load', show, { once: true }); });
+      R.body.querySelectorAll('.vlb-shot img:not([data-gif])').forEach(img => { const show = () => img.classList.add('ready'); img.complete && img.naturalWidth ? show() : img.addEventListener('load', show, { once: true }); });
       const gifs = R.body.querySelectorAll('img[data-gif]');
       if (gifs.length) {
         gifIO = new IntersectionObserver(es => es.forEach(e => {

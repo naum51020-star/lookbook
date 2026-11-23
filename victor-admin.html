@@ -93,6 +93,8 @@
   .cat-chip:hover{border-color:#bbb}
   .cat-chip.on{background:#111;border-color:#111;color:#fff}
   .cat-chip.on span{color:#bbb}
+  .hov-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .hov-th{width:30px;height:40px;border-radius:4px;background:#eee center/cover no-repeat;border:1px solid var(--line)}
   /* 사이드바: 룩북 아래 하위 카테고리 */
   .subcats{margin:2px 0 6px 10px;border-left:1px solid var(--line);padding-left:6px}
   .subcat{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;padding:6px 10px;border-radius:var(--r);font-size:12.5px;color:#555}
@@ -221,7 +223,7 @@
 <body>
 
 <header class="top">
-  <h1>VICTOR LOOKBOOK<span>관리자 · v20261119-gal</span></h1>
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261123-hover</span></h1>
   <div class="top-actions">
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
@@ -800,6 +802,12 @@ function lookCard(l, i, total, b) {
         <input type="search" class="ps-in" placeholder="상품명·번호·주소로 검색해서 추가" autocomplete="off" spellcheck="false" aria-label="LOOK ${i + 1} 상품 검색">
         <div class="ps-drop" hidden></div>
       </div>
+      <div class="hov-row">
+        <label class="chk" style="margin:0"><input type="checkbox" data-lf="hoverOn" ${l.hoverOn && (l.hover || l._hov) ? 'checked' : ''} ${l.hover || l._hov ? '' : 'disabled'}> 호버 시 다른 사진</label>
+        ${l.hover || l._hov ? `<span class="hov-th" style="background-image:url('${esc(l._hov || l.hover)}')"></span>` : ''}
+        <label class="btn sm">${l.hover || l._hov ? '호버 사진 교체' : '호버 사진 올리기'}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-act="hover-image" hidden></label>
+        ${l.hover || l._hov ? '<button type="button" class="btn sm icon danger" data-act="hover-del" title="호버 사진 빼기">✕</button>' : ''}
+      </div>
       <details ${l.video ? 'open' : ''}><summary>영상 썸네일 (선택)</summary><input type="url" data-lf="video" placeholder="https://…/look.mp4 (외부 서버 주소)" value="${esc(l.video || '')}"></details>
       <div class="lact">
         <button class="btn sm icon" data-act="look-left" ${i === 0 ? 'disabled' : ''} title="앞으로">←</button>
@@ -837,8 +845,14 @@ $('#main').addEventListener('change', async e => {
   }
   const card = t.closest('.lcard');
   if (card && lf === 'category') { const l = b.looks[+card.dataset.i]; if (t.value) l.category = t.value; else delete l.category; changed({ main: true }); }
+  if (card && lf === 'hoverOn') { const l = b.looks[+card.dataset.i]; l.hoverOn = t.checked; changed({ main: true }); toast(t.checked ? '호버를 켰어요 · 마우스를 올리면 호버 사진으로 바뀌어요' : '호버를 껐어요'); }
   if (card && lf === 'video') { const l = b.looks[+card.dataset.i]; if (t.value.trim()) l.video = t.value.trim(); else delete l.video; changed({ main: true }); }
   if (t.dataset.act === 'add-images') { await addImages([...t.files]); t.value = ''; }
+  if (t.dataset.act === 'hover-image' && t.files[0]) {
+    const l = b.looks[+card.dataset.i];
+    try { const r = await processImage(t.files[0]); l._hov = r.dataUrl; l._hovFile = newFileName(r.ext).replace('look-', 'hover-'); l.hoverOn = true; changed({ main: true }); toast('호버 사진을 넣었어요'); }
+    catch { toast('이미지를 읽지 못했어요'); }
+  }
   if (t.dataset.act === 'replace-image' && t.files[0]) {
     const l = b.looks[+card.dataset.i];
     try { const r = await processImage(t.files[0]); l._img = r.dataUrl; l._file = newFileName(r.ext); changed({ main: true }); toast('이미지를 바꿨어요'); }
@@ -870,6 +884,7 @@ $('#main').addEventListener('click', e => {
     const x = D.lookbooks.indexOf(b), y = D.lookbooks.indexOf(other);
     [D.lookbooks[x], D.lookbooks[y]] = [D.lookbooks[y], D.lookbooks[x]]; changed({ main: true });
   }
+  if (act === 'hover-del') { delete l.hover; delete l._hov; delete l._hovFile; delete l.hoverOn; changed({ main: true }); return; }
   if (act === 'look-del') { if (!confirm(`LOOK ${i + 1}을 삭제할까요?`)) return; b.looks.splice(i, 1); changed({ main: true }); }
   if (act === 'look-left' || act === 'look-right') moveLook(i, i + (act === 'look-left' ? -1 : 1));
   if (act === 'cat-filter') { adminCat = btn.dataset.cat; renderTree(); renderMain(); return; }
@@ -1312,7 +1327,7 @@ $('#btnDesign').onclick = () => {
    미리보기
    ===================================================================== */
 let pvOpen = false, pvReady = false, pvAck = false, pvMode = 'pc', pvTimer, pvPing, pvPushT;
-const LOOKBOOK_JS_MIN = '20261119-gal';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
+const LOOKBOOK_JS_MIN = '20261123-hover';      // 이 관리자에 맞는 victor-lookbook.js 최소 버전
 const frameWin = () => $('#pvFrame').contentWindow;
 function sendPreview(keepScroll) {
   try { frameWin().postMessage({ type: 'lookbook-preview', data: buildData(true), bookId: cur, keepScroll }, '*'); } catch {}
@@ -1392,6 +1407,7 @@ function buildData(forPreview) {
       if (l.category && b.categories.some(c => c.id === l.category)) o.category = l.category;
       if (forPreview && l._img) { const c = lookImg(l); o.image = c.blob; o.imageKey = c.key; }   // 미리보기엔 Blob(복사 비용 거의 없음)
       if (l.video) o.video = l.video;
+      if (l._hov || l.hover) { o.hover = l._hovFile ? (forPreview ? l._hov : `images/${b.id}/${l._hovFile}`) : l.hover; if (l.hoverOn) o.hoverOn = true; else o.hoverOn = false; }
       return o;
     });
     return base;
@@ -1436,22 +1452,24 @@ const dataUrlBytes = (u) => { const b = atob(u.split(',')[1]); const a = new Uin
 $('#btnExport').onclick = async () => {
   await saveNow(false);
   const news = D.lookbooks.flatMap(b => b.looks.filter(l => l._img).map(l => ({ b, l })));
+  const hovs = D.lookbooks.flatMap(b => b.looks.filter(l => l._hov).map(l => ({ b, l })));
   const gifs = news.filter(x => /\.gif$/i.test(x.l._file)).length;
   const iss = issues();
   openDialog('내보내기', `<div class="stack">
     ${iss.length ? `<div class="issues"><b>확인해 주세요</b><br>${iss.map(esc).join('<br>')}</div>` : ''}
     <ol class="steps">
-      <li><span><b>ZIP 다운로드</b> — victor-lookbook-data.js${news.length ? ` + 새 이미지 ${news.length}장${gifs ? ` (GIF ${gifs}장 포함)` : ''}` : ''}이 들어 있어요.</span></li>
+      <li><span><b>ZIP 다운로드</b> — victor-lookbook-data.js${news.length + hovs.length ? ` + 새 이미지 ${news.length + hovs.length}장${gifs ? ` (GIF ${gifs}장 포함)` : ''}` : ''}이 들어 있어요.</span></li>
       <li><span>압축을 풀고, 카페24 관리자 <b>디자인 &gt; 파일 업로드(또는 FTP)</b>에서 룩북 폴더(victor-lookbook.html이 있는 곳)에 <b>그대로 덮어쓰기</b> 업로드하세요. images 폴더 구조도 그대로 올려야 해요.</span></li>
       <li><span>사이트에서 새로고침하면 반영돼요. (최대 5분 걸릴 수 있어요)</span></li>
       <li><span>업로드를 마쳤으면 아래 <b>업로드 완료</b>를 눌러 임시 이미지를 정리하세요.</span></li>
     </ol>
   </div>`,
-  `<button class="btn" id="exJs">데이터 파일만 받기</button>${news.length ? '<button class="btn" id="exDone">업로드 완료</button>' : ''}<button class="btn primary" id="exZip">ZIP 다운로드</button>`,
+  `<button class="btn" id="exJs">데이터 파일만 받기</button>${news.length + hovs.length ? '<button class="btn" id="exDone">업로드 완료</button>' : ''}<button class="btn primary" id="exZip">ZIP 다운로드</button>`,
   d => {
     $('#exZip', d).onclick = () => {
       const files = [{ name: 'victor-lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
       news.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._file}`, data: dataUrlBytes(l._img) }));
+      hovs.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._hovFile}`, data: dataUrlBytes(l._hov) }));
       download(makeZip(files), `victor-lookbook-update-${stamp()}.zip`);
       toast('ZIP을 내려받았어요');
     };
@@ -1460,6 +1478,7 @@ $('#btnExport').onclick = async () => {
     if (done) done.onclick = () => {
       if (!confirm('카페24에 이미지와 데이터 파일을 모두 올렸나요?\n임시 이미지를 정리하고, 이후엔 업로드된 파일 경로를 사용해요.')) return;
       news.forEach(({ b, l }) => { l.image = `images/${b.id}/${l._file}`; delete l._img; delete l._file; });
+      hovs.forEach(({ b, l }) => { l.hover = `images/${b.id}/${l._hovFile}`; delete l._hov; delete l._hovFile; });
       d.close(); changed({ main: true }); saveNow(false); toast('정리했어요');
     };
   });

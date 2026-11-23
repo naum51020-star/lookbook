@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   if (window.VictorTeamwear) return;
-  const VERSION = '20261119-tw3';
+  const VERSION = '20261123-tw4';
   const SCRIPT = document.currentScript;
   const BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
   const W = 1080, H = 1350;                                   // 결과 이미지 4:5 (SNS·카톡 공유용)
@@ -148,7 +148,7 @@
       who: (P.F || []).length && (P.M || []).length ? 'FM' : (P.F || []).length ? 'F' : 'M',
       tab: (P.F || []).length ? 'F' : 'M',
       sel: { F: { top: first('F', 'top'), bottom: first('F', 'bottom') }, M: { top: first('M', 'top'), bottom: first('M', 'bottom') } },
-      club: '', sub: 'BADMINTON CLUB', logo: null,
+      club: '', logo: null,
     };
     const whoOpts = [['FM', '남녀 함께'], ['F', '여자'], ['M', '남자']].filter(([k]) => [...k].every(g => looks(g).length));
 
@@ -167,10 +167,9 @@
         <div class="vtw-col3">
           <div class="vtw-preview"><canvas width="${W}" height="${H}" aria-label="우리 단체복 미리보기"></canvas></div>
           <section class="vtw-box"><h4><b>STEP 3</b>우리 클럽 정보</h4>
-            <div class="vtw-field"><span>클럽 로고 (선택)</span>
+            <div class="vtw-field"><span>클럽 로고 (선택 · 투명 배경 PNG 추천)</span>
               <div class="vtw-logo"><div class="lg" data-r="lg">로고</div><label>로고 올리기<input type="file" accept="image/*" data-r="logoIn" hidden></label><button type="button" class="rm" data-r="logoRm" hidden>지우기</button></div></div>
-            <label class="vtw-field"><span>클럽명</span><input type="text" data-r="club" maxlength="24" placeholder="예: 스포플 배드민턴 클럽"></label>
-            <label class="vtw-field"><span>현수막 문구 (선택)</span><input type="text" data-r="sub" maxlength="30" value="BADMINTON CLUB"></label>
+            <label class="vtw-field"><span>클럽명 (현수막에 들어가요)</span><input type="text" data-r="club" maxlength="24" placeholder="예: TEAM VICTOR"></label>
             <div class="vtw-btns">
               <button type="button" class="dark" data-r="dl">이미지 다운로드</button>
               <button type="button" class="line" data-r="share">공유하기</button>
@@ -200,14 +199,16 @@
     const want = (src) => { if (!src || ready.has(src)) return ready.get(src); getImg(src).then(im => { ready.set(src, im); draw(); }); return null; };
     ['F', 'M'].forEach(g => looks(g).forEach(l => getImg(asset(l.photo)).then(im => { ready.set(asset(l.photo), im); draw(); })));
     getImg(asset('sim/spofl-wm.png')).then(im => { ready.set('wm', im); draw(); });
+    getImg(asset('sim/victor-x.png')).then(im => { ready.set('vx', im); draw(); });
 
     /* 상의 룩 윗부분 + 하의 룩 아랫부분 이어 붙이기 (조합별로 한 번 만들고 재사용) */
     const mix = new Map();
     function compose(g) {
       const s = st.sel[g], A = L(g, s.top), B = L(g, s.bottom === undefined ? s.top : s.bottom);
       if (!A || !B) return null;
+      const ref = looks(g)[0];                                   // 머리는 항상 이 기준 룩에서 → 옷을 바꿔도 머리 크기 그대로
       const key = `${g}|${A.id}|${B.id}`; if (mix.has(key)) return mix.get(key);
-      const ia = want(asset(A.photo)), ib = want(asset(B.photo)); if (!ia || !ib) return null;
+      const ia = want(asset(A.photo)), ib = want(asset(B.photo)), ir = want(asset(ref.photo)); if (!ia || !ib || !ir) return null;
       const cw = CV.w, ch = CV.h, y0 = CV.shoulderY;
       const c = document.createElement('canvas'); c.width = cw; c.height = ch; const x = c.getContext('2d');
       x.drawImage(ib, 0, 0, cw, ch);
@@ -226,6 +227,16 @@
         x.globalCompositeOperation = 'destination-out'; x.fillStyle = er; x.fillRect(0, 0, cw, seam + 8);
         x.globalCompositeOperation = 'source-over';
         x.drawImage(t, 0, 0);
+      }
+      const hy = (CV.headY || {})[g];
+      if (hy && A.id !== ref.id) {
+        const h = document.createElement('canvas'); h.width = cw; h.height = hy + 12; const hx = h.getContext('2d');
+        hx.drawImage(ir, 0, 0, cw, hy + 12, 0, 0, cw, hy + 12);
+        const gr = hx.createLinearGradient(0, hy - 22, 0, hy + 10); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        hx.globalCompositeOperation = 'destination-in'; hx.fillStyle = gr; hx.fillRect(0, 0, cw, hy + 12);
+        x.globalCompositeOperation = 'destination-out'; const er = x.createLinearGradient(0, hy - 22, 0, hy + 10);
+        er.addColorStop(0, 'rgba(0,0,0,1)'); er.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = er; x.fillRect(0, 0, cw, hy + 10);
+        x.globalCompositeOperation = 'source-over'; x.drawImage(h, 0, 0);
       }
       mix.set(key, c); return c;
     }
@@ -258,7 +269,7 @@
     function paint() {
       drawCourt(); drawBanner();
       const order = st.who === 'FM' ? ['F', 'M'] : [st.who];
-      const ph = order.length > 1 ? H * 0.70 : H * 0.72;          // 사람 키 (화면 높이 대비)
+      const ph = H * 0.73;                                        // 사람 키 (현수막 아래에 적당한 여백)
       const scale = ph / CV.h, pw = CV.w * scale, foot = H * 0.975;
       const xs = order.length > 1 ? [W * 0.37, W * 0.63] : [W / 2];
       order.forEach((g, i) => {
@@ -279,75 +290,42 @@
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     }
     // 실제 비닐 현수막처럼: 살짝 처진 물결 + 천 주름 음영 + 금속 고리 + 끈 + 벽 그림자
-    let bannerCache = null, bannerKey = '';
-    function bannerFace(bw, bh) {
-      const key = [st.club, st.sub, !!st.logo, bw, bh].join('|');
-      if (bannerCache && bannerKey === key) return bannerCache;
-      const c = document.createElement('canvas'); c.width = bw; c.height = bh; const x = c.getContext('2d');
-      let g = x.createLinearGradient(0, 0, 0, bh); g.addColorStop(0, '#1b1b1d'); g.addColorStop(1, '#0d0d0e');
-      x.fillStyle = g; x.fillRect(0, 0, bw, bh);
-      x.strokeStyle = 'rgba(255,255,255,.22)'; x.lineWidth = 3; x.strokeRect(22, 22, bw - 44, bh - 44);   // 인쇄 테두리
-      let tx = 56;
-      if (st.logo) {
-        const s = bh - 70, cx = 44 + s / 2, cy = bh / 2;
-        x.save(); x.beginPath(); x.arc(cx, cy, s / 2, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill(); x.clip();
-        const r = Math.min((s * 0.8) / st.logo.width, (s * 0.8) / st.logo.height);
-        x.drawImage(st.logo, cx - st.logo.width * r / 2, cy - st.logo.height * r / 2, st.logo.width * r, st.logo.height * r); x.restore();
-        tx = 44 + s + 30;
-      }
-      const name = st.club.trim() || '우리 클럽 이름', sub = st.sub.trim();
-      const font = (fs) => `900 ${fs}px Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
-      const maxW = bw - 56 - tx; let fs = 84; x.font = font(fs);
-      while (x.measureText(name).width > maxW && fs > 30) { fs -= 2; x.font = font(fs); }
-      const center = !st.logo, x0 = center ? bw / 2 : tx;
-      x.textAlign = center ? 'center' : 'left';
-      x.fillStyle = st.club.trim() ? '#fff' : 'rgba(255,255,255,.45)';
-      x.fillText(name, x0, bh / 2 + (sub ? fs * 0.16 : fs * 0.36));
-      if (sub) { x.font = '700 24px Pretendard, sans-serif'; x.fillStyle = '#f2d34b'; x.fillText(sub.split('').join(' '), x0, bh / 2 + fs * 0.16 + 40); }
-      // 비닐 광택 + 세로 주름 음영
-      g = x.createLinearGradient(0, 0, 0, bh); g.addColorStop(0, 'rgba(255,255,255,.10)'); g.addColorStop(.35, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.18)');
-      x.fillStyle = g; x.fillRect(0, 0, bw, bh);
-      [[0.18, .07], [0.33, -.06], [0.52, .05], [0.71, -.07], [0.86, .05]].forEach(([p, a]) => {
-        const cx = bw * p, gg = x.createLinearGradient(cx - 40, 0, cx + 40, 0);
-        gg.addColorStop(0, 'rgba(0,0,0,0)'); gg.addColorStop(.5, a > 0 ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${-a * 2})`); gg.addColorStop(1, 'rgba(0,0,0,0)');
-        x.fillStyle = gg; x.fillRect(cx - 40, 0, 80, bh);
-      });
-      bannerCache = c; bannerKey = key; return c;
-    }
+    // 현수막 = 디자인 요소: 남색 띠(VICTOR × 클럽 로고/클럽명) + 흰 줄 + 주황 띠
     function drawBanner() {
-      const bw = Math.round(W * 0.84), bh = Math.round(H * 0.15), bx = (W - bw) / 2, by = H * 0.085, sag = 10;
-      const face = bannerFace(bw, bh);
-      const yAt = (u) => by + Math.sin(u * Math.PI) * sag;       // 가운데가 살짝 처짐
-      // 끈 (양 끝 고리 → 화면 위쪽 모서리)
-      ctx.strokeStyle = 'rgba(70,70,70,.75)'; ctx.lineWidth = 2.2;
-      [[bx + 18, by + 18, 30, 0], [bx + bw - 18, by + 18, W - 30, 0]].forEach(([x1, y1, x2, y2]) => { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.quadraticCurveTo((x1 + x2) / 2, y1 - 20, x2, y2); ctx.stroke(); });
-      // 벽 그림자
-      ctx.save(); ctx.filter = 'blur(14px)'; ctx.fillStyle = 'rgba(0,0,0,.20)';
-      ctx.beginPath(); ctx.moveTo(bx + 10, by + 22);
-      for (let i = 0; i <= 20; i++) { const u = i / 20; ctx.lineTo(bx + 10 + u * bw, yAt(u) + 22); }
-      for (let i = 20; i >= 0; i--) { const u = i / 20; ctx.lineTo(bx + 10 + u * bw, yAt(u) + bh + 26); }
-      ctx.fill(); ctx.restore();
-      // 현수막 본체: 세로 띠로 나눠 물결지게
-      const strips = 180, sw = bw / strips;
-      for (let i = 0; i < strips; i++) {
-        const u = (i + .5) / strips, y = yAt(u) + Math.sin(u * Math.PI * 4) * 1.6;
-        ctx.drawImage(face, i * sw, 0, sw + 1, bh, bx + i * sw, y, sw + 1, bh);
+      const BH = Math.round(W * 316 / 1594), navyH = Math.round(BH * 236 / 316), whiteH = Math.round(BH * 18 / 316);
+      ctx.fillStyle = '#173383'; ctx.fillRect(0, 0, W, navyH);
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, navyH, W, whiteH);
+      ctx.fillStyle = '#dd742b'; ctx.fillRect(0, navyH + whiteH, W, BH - navyH - whiteH);
+      const vx = ready.get('vx'); if (!vx) return;
+      const gh = navyH * 0.30, gw = vx.width * (gh / vx.height), gap = gh * 0.55, cy = navyH / 2;
+      // 오른쪽 내용: 로고 → 클럽명 (둘 다 넣으면 나란히)
+      const name = st.club.trim(), parts = [];
+      if (st.logo) { const lh = navyH * 0.46, lw = Math.min(st.logo.width * (lh / st.logo.height), W * 0.42); parts.push({ w: lw, draw: (x) => ctx.drawImage(st.logo, x, cy - (lw * st.logo.height / st.logo.width) / 2, lw, lw * st.logo.height / st.logo.width) }); }
+      if (name) {
+        let fs = navyH * 0.40; const sx = 0.86, font = (f) => `900 ${f}px Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
+        ctx.font = font(fs); const room = W * 0.9 - gw - gap - parts.reduce((t, p) => t + p.w + gap * 0.6, 0);
+        while (ctx.measureText(name).width * sx > room && fs > 18) { fs -= 1; ctx.font = font(fs); }
+        const tw = ctx.measureText(name).width * sx;
+        parts.push({ w: tw, draw: (x) => { ctx.save(); ctx.font = font(fs); ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.translate(x, cy + fs * 0.04); ctx.scale(sx, 1); ctx.fillText(name, 0, 0); ctx.restore(); } });
       }
-      // 금속 고리 (모서리 + 위아래 가운데)
-      const ring = (x, y) => { ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fillStyle = '#c9c9c9'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = '#8d8d8d'; ctx.stroke();
-        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fillStyle = '#ececec'; ctx.fill(); };
-      [0, 0.5, 1].forEach(u => { const x = bx + 18 + u * (bw - 36); ring(x, yAt(u) + 18); ring(x, yAt(u) + bh - 18); });
+      const contentW = parts.reduce((t, p, i) => t + p.w + (i ? gap * 0.6 : 0), 0);
+      const x0 = parts.length ? (W - (gw + gap + contentW)) / 2 : W * 295 / 1594;   // 비어 있으면 'VICTOR ×'만 왼쪽 자리에
+      ctx.drawImage(vx, x0, cy - gh / 2, gw, gh);
+      let px = x0 + gw + gap; parts.forEach(p => { p.draw(px); px += p.w + gap * 0.6; });
     }
     function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-    let wmDark = null;                                       // 흰 배경용: 워터마크 로고를 검정으로
+    let wmTile = null;                                       // 회색 SPOFL 로고 (한 번 만들어 재사용)
     function watermark() {
       const wm = ready.get('wm');
-      ctx.save(); ctx.globalAlpha = .9;
-      if (wm && !wmDark) { const t = document.createElement('canvas'); t.width = wm.width; t.height = wm.height; const tx = t.getContext('2d'); tx.drawImage(wm, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#111'; tx.fillRect(0, 0, t.width, t.height); wmDark = t; }
-      if (wmDark) { const ww = 200, wh = wmDark.height * (ww / wmDark.width); ctx.drawImage(wmDark, W - ww - 34, H - wh - 30, ww, wh); }
-      ctx.restore();
-      ctx.font = '500 19px Pretendard, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.textAlign = 'left';
-      ctx.fillText('합성 이미지 · 실제 제품과 다를 수 있어요', 34, H - 36);
+      if (wm && !wmTile) { const t = document.createElement('canvas'); t.width = wm.width; t.height = wm.height; const tx = t.getContext('2d'); tx.drawImage(wm, 0, 0); tx.globalCompositeOperation = 'source-in'; tx.fillStyle = '#8c8c8c'; tx.fillRect(0, 0, t.width, t.height); wmTile = t; }
+      if (wmTile) {
+        const ww = 170, wh = wmTile.height * (ww / wmTile.width), sx = 300, sy = 190;
+        ctx.save(); ctx.globalAlpha = 0.5; ctx.translate(W / 2, H / 2); ctx.rotate(-20 * Math.PI / 180);
+        for (let y = -H, r = 0; y < H; y += sy, r++) for (let x = -W - (r % 2) * sx / 2; x < W; x += sx) ctx.drawImage(wmTile, x, y, ww, wh);
+        ctx.restore();
+      }
+      ctx.font = '500 19px Pretendard, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('합성 이미지 · 실제 제품과 다를 수 있어요', 34, H - 30);
     }
 
     /* 이벤트 */
@@ -367,7 +345,6 @@
       if (pk) { st.sel[st.tab][pk.dataset.part] = pk.dataset.pick; renderItems(); draw(); return; }
     });
     R.club.addEventListener('input', () => { st.club = R.club.value; draw(); });
-    R.sub.addEventListener('input', () => { st.sub = R.sub.value; draw(); });
     R.logoIn.addEventListener('change', () => {
       const f = R.logoIn.files[0]; if (!f) return;
       const rd = new FileReader();
