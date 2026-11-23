@@ -223,7 +223,7 @@
 <body>
 
 <header class="top">
-  <h1>VICTOR LOOKBOOK<span>관리자 · v20261123-sync</span></h1>
+  <h1>VICTOR LOOKBOOK<span>관리자 · v20261123-all</span></h1>
   <div class="top-actions">
     <span class="save-state" id="saveState"></span>
     <button class="btn" id="btnSeasons">시즌 관리</button>
@@ -1463,13 +1463,34 @@ $('#btnExport').onclick = async () => {
       <li><span>사이트에서 새로고침하면 반영돼요. (최대 5분 걸릴 수 있어요)</span></li>
       <li><span>업로드를 마쳤으면 아래 <b>업로드 완료</b>를 눌러 임시 이미지를 정리하세요.</span></li>
     </ol>
+    <label class="chk" style="margin:0"><input type="checkbox" id="exAll"> <b>전체 이미지 포함</b> <span class="hint">— 이미 서버에 올라간 이미지까지 모두 ZIP에 넣어요 (백업·서버 옮길 때). 카페24에 올린 관리자에서 열어야 해요.</span></label>
   </div>`,
   `<button class="btn" id="exJs">데이터 파일만 받기</button>${news.length + hovs.length ? '<button class="btn" id="exDone">업로드 완료</button>' : ''}<button class="btn primary" id="exZip">ZIP 다운로드</button>`,
   d => {
-    $('#exZip', d).onclick = () => {
+    $('#exZip', d).onclick = async () => {
       const files = [{ name: 'victor-lookbook-data.js', data: new TextEncoder().encode(dataJs(buildData(false))) }];
       news.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._file}`, data: dataUrlBytes(l._img) }));
       hovs.forEach(({ b, l }) => files.push({ name: `images/${b.id}/${l._hovFile}`, data: dataUrlBytes(l._hov) }));
+      if ($('#exAll', d).checked) {
+        // 이미 서버에 있는 이미지도 받아서 같이 넣기 (같은 경로 그대로)
+        const have = new Set(files.map(f => f.name)), paths = [];
+        D.lookbooks.forEach(b => b.looks.forEach(l => [l._img ? null : l.image, l._hov ? null : l.hover].forEach(u => {
+          if (u && typeof u === 'string' && !/^(https?:|data:|blob:|\/\/)/.test(u) && !have.has(u)) { have.add(u); paths.push(u); }
+        })));
+        const btn = $('#exZip', d); btn.disabled = true; let ok = 0; const miss = [];
+        for (let i = 0; i < paths.length; i++) {
+          btn.innerHTML = `<span class="spin"></span>이미지 받는 중 ${i + 1}/${paths.length}`;
+          try { const r = await fetch(paths[i], { cache: 'no-store' }); if (!r.ok) throw 0; files.push({ name: paths[i], data: new Uint8Array(await r.arrayBuffer()) }); ok++; }
+          catch { miss.push(paths[i]); }
+        }
+        btn.disabled = false; btn.textContent = 'ZIP 다운로드';
+        if (miss.length) {
+          const why = location.protocol === 'file:' ? '내 컴퓨터에서 연 관리자라 서버 이미지를 받을 수 없어요. 카페24에 올린 victor-admin.html에서 해 주세요.' : '서버에 없는 이미지예요. 그 룩은 [이미지 교체]로 다시 넣어 주세요.';
+          if (!confirm(`이미지 ${miss.length}장을 받지 못했어요.\n${why}\n\n${miss.slice(0, 8).join('\n')}${miss.length > 8 ? '\n…' : ''}\n\n받은 것만으로 ZIP을 만들까요?`)) return;
+        }
+        download(makeZip(files), `victor-lookbook-all-${stamp()}.zip`);
+        toast(`전체 ZIP을 내려받았어요 (기존 이미지 ${ok}장 포함)`); return;
+      }
       download(makeZip(files), `victor-lookbook-update-${stamp()}.zip`);
       toast('ZIP을 내려받았어요');
     };
