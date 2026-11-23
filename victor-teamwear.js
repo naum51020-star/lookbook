@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   if (window.VictorTeamwear) return;
-  const VERSION = '20261123-tw4';
+  const VERSION = '20261123-tw5';
   const SCRIPT = document.currentScript;
   const BASE = SCRIPT && SCRIPT.src ? new URL('.', SCRIPT.src).href : location.href;
   const W = 1080, H = 1350;                                   // 결과 이미지 4:5 (SNS·카톡 공유용)
@@ -230,13 +230,16 @@
       }
       const hy = (CV.headY || {})[g];
       if (hy && A.id !== ref.id) {
-        const h = document.createElement('canvas'); h.width = cw; h.height = hy + 12; const hx = h.getContext('2d');
-        hx.drawImage(ir, 0, 0, cw, hy + 12, 0, 0, cw, hy + 12);
-        const gr = hx.createLinearGradient(0, hy - 22, 0, hy + 10); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        hx.globalCompositeOperation = 'destination-in'; hx.fillStyle = gr; hx.fillRect(0, 0, cw, hy + 12);
-        x.globalCompositeOperation = 'destination-out'; const er = x.createLinearGradient(0, hy - 22, 0, hy + 10);
-        er.addColorStop(0, 'rgba(0,0,0,1)'); er.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = er; x.fillRect(0, 0, cw, hy + 10);
-        x.globalCompositeOperation = 'source-over'; x.drawImage(h, 0, 0);
+        // 머리·얼굴만 기준 룩에서 가져옴: 가운데 타원 모양으로 부드럽게 → 어깨선은 원래 사진 그대로 (어깨 자글거림 방지)
+        const hw = cw * 0.20, cx = cw / 2, top = 0;
+        const h = document.createElement('canvas'); h.width = cw; h.height = hy + 30; const hx = h.getContext('2d');
+        hx.drawImage(ir, 0, 0, cw, hy + 30, 0, 0, cw, hy + 30);
+        const m = document.createElement('canvas'); m.width = cw; m.height = hy + 30; const mx = m.getContext('2d');
+        mx.filter = 'blur(10px)'; mx.fillStyle = '#000';
+        mx.beginPath(); mx.ellipse(cx, (top + hy) / 2, hw, (hy - top) / 2 + 6, 0, 0, Math.PI * 2); mx.fill();
+        hx.globalCompositeOperation = 'destination-in'; hx.drawImage(m, 0, 0);
+        x.save(); x.globalCompositeOperation = 'destination-out'; x.drawImage(m, 0, 0); x.restore();
+        x.drawImage(h, 0, 0);
       }
       mix.set(key, c); return c;
     }
